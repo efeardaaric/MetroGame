@@ -121,3 +121,10 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 - Kod: proje sahibine aittir.
 - Godot Engine: MIT. Nunito yazı tipi: SIL OFL 1.1 (`assets/fonts/OFL.txt`).
 - Müzik, ses efektleri, ikonlar: bu proje için üretilmiş özgün içerik.
+
+## Ekran görüntüleri
+
+| | | |
+|---|---|---|
+| ![](docs/screenshots/01_menu.png) | ![](docs/screenshots/02_network.png) | ![](docs/screenshots/03_line.png) |
+| ![](docs/screenshots/04_profile.png) | ![](docs/screenshots/05_cities_landscape.png) | ![](docs/screenshots/06_izmir_landscape.png) |
