@@ -292,6 +292,12 @@ func on_event(state: GameState, eid: String) -> void:
 			post(ev["post"], {}, state)
 
 
+func on_tech(state: GameState, id: String) -> void:
+	var name := _both("tech_" + id)
+	post("tech_official", {"tech": name}, state, "official")
+	post("tech_citizen", {"tech": name}, state, "citizen", 1.3)
+
+
 func on_archaeology(state: GameState, lid: int) -> void:
 	var name: String = state.net.lines[lid]["name"] if state.net.lines.has(lid) else "M"
 	post("archaeology", {"line": name}, state, "news", 2.0)

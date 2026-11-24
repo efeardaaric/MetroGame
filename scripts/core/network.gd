@@ -15,6 +15,7 @@ var stations := {}  # id -> {id, pos, name, lines:Array}
 var lines := {}     # id -> line dict
 var _next_station := 1
 var _next_line := 1
+var tech: Array = []        # researched technology ids (shared with GameState)
 
 
 func _init(city_map: CityMap) -> void:
@@ -78,7 +79,7 @@ func line_hourly_capacity(line: Dictionary) -> float:
 	if line["vehicles"] <= 0:
 		return 0.0
 	var m := TransitModes.get_mode(line["mode"])
-	return m["capacity"] * 60.0 / line_headway_min(line)
+	return m["capacity"] * 60.0 / line_headway_min(line) * TechData.mode_mult(tech, "capacity", line["mode"])
 
 
 func depot_capacity(line: Dictionary) -> int:
@@ -93,7 +94,7 @@ func depot_expand_cost(line: Dictionary) -> float:
 
 func line_annual_opex(line: Dictionary) -> float:
 	var m := TransitModes.get_mode(line["mode"])
-	return line["vehicles"] * m["vehicle_opex"] + line_length(line) * m["km_opex"] + line["stations"].size() * 0.4
+	return line["vehicles"] * m["vehicle_opex"] * TechData.mode_mult(tech, "opex", line["mode"]) + line_length(line) * m["km_opex"] + line["stations"].size() * 0.4
 
 
 func total_annual_opex() -> float:
@@ -172,7 +173,7 @@ func evaluate_segment(mode: String, deep: bool, a: Vector2, b: Vector2) -> Dicti
 		runs.append(Vector2(run_start, 1.0))
 	res["water_km"] = water_km
 	res["water_runs"] = runs
-	var cost_km: float = m["cost_km_deep"] if (deep and m["underground"]) else m["cost_km"]
+	var cost_km: float = m["cost_km_deep"] * TechData.mult(tech, "cost_km_deep") if (deep and m["underground"]) else m["cost_km"]
 	var cost: float = length * cost_km
 	if res.has("cost_river") and m["surface"]:
 		cost += 6.0 # small river bridge
@@ -244,9 +245,9 @@ func evaluate_draft(mode: String, deep: bool, nodes: Array, existing_line_id: in
 	for i in nodes.size():
 		var n: Dictionary = nodes[i]
 		if n["sid"] < 0:
-			total += m["cost_station"]
+			total += m["cost_station"] * TechData.mult(tech, "cost_station")
 		elif not _station_has_mode(n["sid"], mode):
-			total += m["cost_station"] * 0.5 # platform added to existing station
+			total += m["cost_station"] * 0.5 * TechData.mult(tech, "cost_station") # platform added to existing station
 		if i > 0:
 			var e := evaluate_segment(mode, deep, nodes[i - 1]["pos"], n["pos"])
 			segs.append(e)
@@ -398,6 +399,13 @@ func set_vehicles(lid: int, n: int) -> void:
 func expand_depot(lid: int) -> void:
 	if lines.has(lid):
 		lines[lid]["depot"] = lines[lid].get("depot", 0) + 1
+		changed.emit()
+
+
+func rename_station(sid: int, new_name: String) -> void:
+	var n := new_name.strip_edges().replace("@", "")
+	if stations.has(sid) and n != "":
+		stations[sid]["name"] = n.substr(0, 28)
 		changed.emit()
 
 

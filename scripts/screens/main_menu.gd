@@ -66,6 +66,8 @@ func _build_demo_network() -> void:
 
 func _process(delta: float) -> void:
 	_drift_t += delta
+	if world:
+		world.advance_day(delta, 5.0)
 	if world and world.camera:
 		var base: Vector2 = demo.city.project(28.99, 41.03) * MapLayer.PX
 		world.camera.position = base + Vector2(cos(_drift_t * 0.05), sin(_drift_t * 0.037)) * 1100.0
@@ -109,7 +111,10 @@ func _build_menu() -> void:
 	menu_box.add_child(UI.gap(8 if land else 30))
 	var last := SaveManager.last_city()
 	if last != "":
-		var cont := UI.button("%s · %s" % [I18n.t("continue"), I18n.t(CityData.get_city(last)["name_key"])], "AccentButton", "play", 96)
+		var cname := I18n.t(CityData.get_city(last.trim_suffix("_sandbox"))["name_key"])
+		if last.ends_with("_sandbox"):
+			cname += " (" + I18n.t("sandbox") + ")"
+		var cont := UI.button("%s · %s" % [I18n.t("continue"), cname], "AccentButton", "play", 96)
 		cont.pressed.connect(func(): start_city.emit(last, false))
 		menu_box.add_child(cont)
 	var play := UI.button(I18n.t("play"), "" if last != "" else "AccentButton", "build" if last != "" else "play", 96)
@@ -124,6 +129,9 @@ func _build_menu() -> void:
 	st.pressed.connect(func(): SettingsPanel.open(ui_layer, func(): _build_menu()))
 	row.add_child(st)
 	menu_box.add_child(row)
+	var ach := UI.button(I18n.t("achievements") + "  %d/%d" % [Achievements.unlocked().size(), Achievements.LIST.size()], "", "trophy")
+	ach.pressed.connect(func(): AchievementBanner.open_list(ui_layer))
+	menu_box.add_child(ach)
 	var cr := UI.button(I18n.t("credits"), "FlatButton", "", 64)
 	cr.add_theme_color_override("font_color", Palette.MUTED)
 	cr.pressed.connect(_show_credits)
@@ -268,4 +276,11 @@ func _city_card(cid: String) -> Control:
 		play.pressed.connect(func(): start_city.emit(cid, true))
 		row.add_child(play)
 	v.add_child(row)
+	var sb_slot := cid + "_sandbox"
+	var sb := UI.button(I18n.t("sandbox") + (" · " + I18n.t("continue") if SaveManager.has_save(sb_slot) else ""), "FlatButton", "", 60)
+	sb.add_theme_font_size_override("font_size", 22)
+	sb.add_theme_color_override("font_color", Palette.INFO)
+	sb.tooltip_text = I18n.t("sandbox_desc")
+	sb.pressed.connect(func(): start_city.emit(sb_slot, not SaveManager.has_save(sb_slot)))
+	v.add_child(sb)
 	return card

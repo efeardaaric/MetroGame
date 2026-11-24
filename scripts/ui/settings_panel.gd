@@ -25,6 +25,10 @@ static func open(parent: Node, on_language_changed: Callable = Callable()) -> Mo
 		Settings.save_settings()
 		Settings.vibrate(20)
 	))
+	b.add_child(_toggle_row(I18n.t("day_night"), Settings.day_night, func(on: bool):
+		Settings.day_night = on
+		Settings.save_settings()
+	))
 	b.add_child(_toggle_row(I18n.t("show_fps"), Settings.show_fps, func(on: bool):
 		Settings.show_fps = on
 		Settings.save_settings()

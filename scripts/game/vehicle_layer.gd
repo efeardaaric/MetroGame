@@ -11,6 +11,7 @@ var demand: DemandModel
 var speed := 1.0
 var t := 0.0
 var zoom := 1.0
+var light_points: Array = []  # [pos, dir] collected for NightLights
 
 
 func setup(n: TransitNetwork, nl: NetworkLayer, d: DemandModel) -> void:
@@ -28,6 +29,7 @@ func _process(delta: float) -> void:
 func _draw() -> void:
 	if net == null:
 		return
+	light_points.clear()
 	var any_sel := netlayer.selected_line >= 0
 	var inv := 1.0 / clampf(zoom, 0.05, 2.0)
 	for lid in netlayer.paths.keys():
@@ -71,6 +73,7 @@ func _draw() -> void:
 			# lateral offset so opposite directions don't overlap
 			var nrm := Vector2(-dir.y, dir.x)
 			pos += nrm * width * 0.55
+			light_points.append([pos, dir])
 			draw_set_transform(pos, dir.angle(), Vector2.ONE)
 			if l["mode"] == "ferry":
 				_draw_boat(length * 1.2, width * 1.4, col, alpha)

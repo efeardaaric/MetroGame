@@ -13,6 +13,7 @@ var language := ""
 var show_fps := false
 var colorblind_patterns := false
 var high_quality := true
+var day_night := true
 
 
 func _ready() -> void:
@@ -34,6 +35,7 @@ func load_settings() -> void:
 	language = cf.get_value("general", "language", language)
 	show_fps = cf.get_value("general", "show_fps", show_fps)
 	high_quality = cf.get_value("general", "high_quality", high_quality)
+	day_night = cf.get_value("general", "day_night", day_night)
 
 
 func save_settings() -> void:
@@ -45,6 +47,7 @@ func save_settings() -> void:
 	cf.set_value("general", "language", language)
 	cf.set_value("general", "show_fps", show_fps)
 	cf.set_value("general", "high_quality", high_quality)
+	cf.set_value("general", "day_night", day_night)
 	cf.save(PATH)
 	changed.emit()
 

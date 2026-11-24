@@ -9,6 +9,11 @@ var network: NetworkLayer
 var vehicles: VehicleLayer
 var draft: DraftLayer
 var flavor: FlavorLayer
+var daylight: CanvasModulate
+var lights_layer: CanvasLayer
+var lights: NightLights
+var day_t := 0.33            # 0..1 time of day (0.33 ≈ 08:00)
+const DAY_SECONDS := 150.0   # real seconds per in-game day at 1x
 var camera: CameraRig
 
 
@@ -31,6 +36,15 @@ func setup(s: GameState) -> void:
 	vehicles.setup(s.net, network, s.demand)
 	draft = DraftLayer.new()
 	add_child(draft)
+	daylight = CanvasModulate.new()
+	add_child(daylight)
+	lights_layer = CanvasLayer.new()
+	lights_layer.layer = 1
+	lights_layer.follow_viewport_enabled = true
+	add_child(lights_layer)
+	lights = NightLights.new()
+	lights_layer.add_child(lights)
+	lights.setup(s.city, s.net, vehicles)
 	camera = CameraRig.new()
 	add_child(camera)
 	camera.make_current()
@@ -60,6 +74,51 @@ func _on_zoom(z: float) -> void:
 	vehicles.zoom = z
 	draft.zoom = z
 	flavor.set_zoom(z)
+	lights.set_zoom(z)
+
+
+## Advances the visual day/night cycle.
+func advance_day(dt_real: float, speed: float) -> void:
+	if not Settings.day_night:
+		day_t = 0.5
+	else:
+		day_t = fmod(day_t + dt_real * speed / DAY_SECONDS, 1.0)
+	var h := day_t * 24.0
+	var day_c := Color(1, 1, 1)
+	var dusk_c := Color(1.0, 0.8, 0.66)
+	var night_c := Color(0.30, 0.36, 0.56)
+	var c: Color
+	var night := 0.0
+	if h < 5.0 or h >= 21.0:
+		c = night_c
+		night = 1.0
+	elif h < 6.5:
+		var t := (h - 5.0) / 1.5
+		c = night_c.lerp(dusk_c, t)
+		night = 1.0 - t
+	elif h < 8.0:
+		c = dusk_c.lerp(day_c, (h - 6.5) / 1.5)
+	elif h < 18.0:
+		c = day_c
+	elif h < 19.5:
+		c = day_c.lerp(dusk_c, (h - 18.0) / 1.5)
+		night = (h - 18.0) / 1.5 * 0.35
+	else:
+		var t2 := (h - 19.5) / 1.5
+		c = dusk_c.lerp(night_c, t2)
+		night = 0.35 + 0.65 * t2
+	daylight.color = c
+	lights.modulate.a = night
+
+
+func clock_text() -> String:
+	var mins := int(day_t * 24.0 * 60.0)
+	return "%02d:%02d" % [mins / 60, (mins % 60) / 10 * 10]
+
+
+func is_night() -> bool:
+	var h := day_t * 24.0
+	return h < 6.0 or h >= 19.5
 
 
 func focus_km(p: Vector2, z: float = -1.0) -> void:

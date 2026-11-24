@@ -191,6 +191,26 @@ func _draw() -> void:
 			draw_circle(p.call(0.37, 0.42), s * 0.05, c)
 			draw_circle(p.call(0.63, 0.42), s * 0.05, c)
 			draw_line(p.call(0.36, 0.64), p.call(0.64, 0.64), c, lw * 0.8, true)
+		"trophy":
+			draw_colored_polygon(PackedVector2Array([p.call(0.28, 0.16), p.call(0.72, 0.16), p.call(0.68, 0.42), p.call(0.58, 0.55), p.call(0.42, 0.55), p.call(0.32, 0.42)]), c)
+			draw_arc(p.call(0.26, 0.3), s * 0.1, PI * 0.5, PI * 1.5, 10, c, lw * 0.8, true)
+			draw_arc(p.call(0.74, 0.3), s * 0.1, -PI * 0.5, PI * 0.5, 10, c, lw * 0.8, true)
+			draw_rect(Rect2(p.call(0.46, 0.55), Vector2(0.08, 0.16) * s), c)
+			draw_rect(Rect2(p.call(0.3, 0.71), Vector2(0.4, 0.12) * s), c)
+		"flask":
+			draw_colored_polygon(PackedVector2Array([p.call(0.4, 0.15), p.call(0.6, 0.15), p.call(0.6, 0.4), p.call(0.82, 0.82), p.call(0.18, 0.82), p.call(0.4, 0.4)]), Color(c, 0.35))
+			draw_polyline(PackedVector2Array([p.call(0.4, 0.15), p.call(0.4, 0.4), p.call(0.18, 0.82), p.call(0.82, 0.82), p.call(0.6, 0.4), p.call(0.6, 0.15)]), c, lw * 0.8, true)
+			draw_line(p.call(0.34, 0.15), p.call(0.66, 0.15), c, lw * 0.8, true)
+			draw_colored_polygon(PackedVector2Array([p.call(0.29, 0.62), p.call(0.71, 0.62), p.call(0.82, 0.82), p.call(0.18, 0.82)]), c)
+		"sun":
+			var sc: Vector2 = p.call(0.5, 0.5)
+			draw_circle(sc, s * 0.2, c)
+			for k in 8:
+				var a := TAU * k / 8.0
+				draw_line(sc + Vector2.from_angle(a) * s * 0.29, sc + Vector2.from_angle(a) * s * 0.4, c, lw * 0.8, true)
+		"moon":
+			draw_circle(p.call(0.5, 0.5), s * 0.32, c)
+			draw_circle(p.call(0.64, 0.4), s * 0.27, Color(0.1, 0.13, 0.19))
 		"megaphone":
 			draw_colored_polygon(PackedVector2Array([p.call(0.15, 0.4), p.call(0.35, 0.4), p.call(0.8, 0.18), p.call(0.8, 0.82), p.call(0.35, 0.6), p.call(0.15, 0.6)]), c)
 			draw_line(p.call(0.3, 0.6), p.call(0.38, 0.85), c, lw, true)

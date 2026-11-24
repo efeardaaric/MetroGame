@@ -33,6 +33,8 @@ var finish_button: Button
 var fps_label: Label
 var tutorial_panel: PanelContainer
 var social_badge: Label
+var ach_banner: AchievementBanner
+var day_icon: Icon
 var snow: SnowOverlay
 var _amb_timer := 0.0
 var _rng := RandomNumberGenerator.new()
@@ -88,6 +90,9 @@ func _ready() -> void:
 	root_ui.move_child(snow, 0)
 	_rng.randomize()
 	state.event_started.connect(_on_city_event)
+	state.tech_completed.connect(_on_tech_done)
+	ach_banner = AchievementBanner.new()
+	root_ui.add_child(ach_banner)
 	state.feed.post_added.connect(_on_post)
 	if state.feed.posts.is_empty():
 		state.feed.post("no_network", {}, state, "citizen")
@@ -148,7 +153,8 @@ func _build_hud() -> void:
 	date_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var dv := UI.vbox(4)
 	var dh := UI.hbox(8)
-	dh.add_child(Icon.make("calendar", 28, Palette.MUTED))
+	day_icon = Icon.make("sun", 28, Palette.ACCENT)
+	dh.add_child(day_icon)
 	date_label = UI.label("", 26, Palette.TEXT, 850)
 	dh.add_child(date_label)
 	dv.add_child(dh)
@@ -221,13 +227,14 @@ func _build_nav() -> void:
 		["target", "tab_goals", func(): open_goals()],
 		["chart", "tab_finance", func(): open_finance()],
 		["bird", "tab_social", func(): open_social()],
+		["flask", "tab_tech", func(): open_tech()],
 	]
 	for it in items:
 		var b := Button.new()
 		b.theme_type_variation = "FlatButton"
 		b.focus_mode = Control.FOCUS_NONE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size = Vector2(80, 104)
+		b.custom_minimum_size = Vector2(70, 104)
 		var v := UI.vbox(2)
 		v.set_anchors_preset(Control.PRESET_FULL_RECT)
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -236,7 +243,7 @@ func _build_nav() -> void:
 		var ic := Icon.make(it[0], 44, Palette.ACCENT if accent else Palette.TEXT)
 		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
 		v.add_child(ic)
-		var l := UI.label(I18n.t(it[1]), 20, Palette.ACCENT if accent else Palette.MUTED, 800)
+		var l := UI.label(I18n.t(it[1]), 19, Palette.ACCENT if accent else Palette.MUTED, 800)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(l)
 		b.add_child(v)
@@ -317,7 +324,7 @@ func _update_hud() -> void:
 	if date_label == null:
 		return
 	date_label.text = "%s %d" % [I18n.month_name(state.month), state.year]
-	cash_label.text = Geo.fmt_money(state.cash)
+	cash_label.text = "∞" if state.sandbox else Geo.fmt_money(state.cash)
 	cash_label.add_theme_color_override("font_color", Palette.BAD if state.cash < 0 else Palette.TEXT)
 	var trend := ""
 	if state.target_riders > state.riders * 1.02:
@@ -350,11 +357,17 @@ func current_speed() -> float:
 func _process(delta: float) -> void:
 	var sp := current_speed()
 	state.advance(delta, sp)
+	world.advance_day(delta, sp)
 	world.vehicles.speed = sp if sp > 0.0 else 0.0
 	_hud_timer += delta
 	if _hud_timer > 0.25:
 		_hud_timer = 0.0
 		month_bar.value = state.month_progress
+		date_label.text = "%s %d · %s" % [I18n.month_name(state.month), state.year, world.clock_text()]
+		var night := world.is_night()
+		if day_icon.kind != ("moon" if night else "sun"):
+			day_icon.set_kind("moon" if night else "sun")
+			day_icon.set_color(Color("bcd4ff") if night else Palette.ACCENT)
 		if Settings.show_fps:
 			fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 		fps_label.visible = Settings.show_fps
@@ -591,6 +604,8 @@ func _on_post(p: Dictionary) -> void:
 		state.feed.unread = 0
 		_refresh_live_sheet()
 	_update_badge()
+	if p.get("viral", false) and float(p["sent"]) > 0.5:
+		check_achievements({"viral": true})
 	if p.get("viral", false) and Time.get_ticks_msec() - _last_viral_toast > 15000:
 		_last_viral_toast = Time.get_ticks_msec()
 		var txt := state.feed.text_of(p)
@@ -603,6 +618,23 @@ func _on_city_event(eid: String) -> void:
 	toast.show_msg(I18n.t("event_" + eid), "info", 4.5)
 	Audio.play("chime", 1.0, -6.0)
 	world.labels.queue_redraw()
+
+
+func open_tech() -> void:
+	show_sheet(panels.tech_sheet())
+
+
+func _on_tech_done(id: String) -> void:
+	toast.show_msg(I18n.t("tech_complete") % I18n.t("tech_" + id), "good", 4.0)
+	Audio.play("goal")
+	_refresh_live_sheet()
+	_update_hud()
+	check_achievements()
+
+
+func check_achievements(flags: Dictionary = {}) -> void:
+	for id in Achievements.check(state, flags):
+		ach_banner.push(id)
 
 
 func open_layers() -> void:
@@ -625,6 +657,15 @@ func open_pause_menu() -> void:
 	add.call(I18n.t("resume"), "AccentButton", "play", m.close)
 	add.call(I18n.t("settings"), "", "gear", func():
 		SettingsPanel.open(m, func(): _refresh_language())
+	)
+	add.call(I18n.t("timelapse"), "", "calendar", func():
+		m.close()
+		show_modal(panels.timelapse_modal())
+	)
+	add.call(I18n.t("achievements"), "", "trophy", func():
+		var am := AchievementBanner.open_list(ui_layer)
+		modal_count += 1
+		am.tree_exited.connect(func(): modal_count = maxi(0, modal_count - 1))
 	)
 	add.call(I18n.t("how_to_play"), "", "info", func(): show_help())
 	add.call(I18n.t("save_quit"), "", "home", func():
@@ -850,6 +891,7 @@ func finish_build() -> void:
 			draft_nodes_committed.append(n["pos"])
 	var lid := state.net.commit_draft(build_mode, build_deep, draft_nodes, cost, draft_extend, draft_at_start, ev.get("vehicles", 0))
 	var lname: String = state.net.lines[lid]["name"]
+	state.log_line(lid)
 	_check_archaeology(lid, cost)
 	state.feed.on_line_opened(state, lid, extending)
 	Audio.play("build")
@@ -867,6 +909,7 @@ func finish_build() -> void:
 			select_line(-1)
 	)
 	_tutorial_event("line_built")
+	check_achievements()
 	save_now()
 
 
@@ -889,6 +932,7 @@ func _check_archaeology(lid: int, cost: float) -> void:
 	state.year_capex += extra
 	state.cash_changed.emit()
 	state.feed.on_archaeology(state, lid)
+	check_achievements({"archaeology": true})
 	var m := Modal.create(I18n.t("archaeology_title"), 620.0)
 	m.body.add_child(Icon.make("info", 64, Palette.ACCENT))
 	var lb := UI.wrap_label(I18n.t("archaeology_body") % [l["name"], Geo.fmt_money(extra)], 25, Palette.TEXT)
@@ -915,6 +959,7 @@ func _refresh_live_sheet() -> void:
 
 func _on_month() -> void:
 	_update_hud()
+	check_achievements()
 	if state.debt_months > 0:
 		toast.show_msg(I18n.t("debt_warning") % (GameState.DEBT_MONTHS_LIMIT - state.debt_months), "error", 3.5)
 	_refresh_live_sheet()
@@ -955,9 +1000,9 @@ func _on_bankrupt() -> void:
 	m.body.add_child(l)
 	var restart := UI.button(I18n.t("restart"), "AccentButton", "undo")
 	restart.pressed.connect(func():
-		SaveManager.delete_save(state.city_id)
+		SaveManager.delete_save(state.slot())
 		m.close()
-		get_parent().call("start_city", state.city_id, true)
+		get_parent().call("start_city", state.slot(), true)
 	)
 	m.body.add_child(restart)
 	var menu := UI.button(I18n.t("main_menu"), "", "home")

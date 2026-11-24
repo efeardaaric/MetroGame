@@ -52,12 +52,16 @@ func _show_menu() -> void:
 	_set_current(m)
 
 
+## `id` is a save slot: a city id, optionally suffixed with "_sandbox".
 func _show_game(id: String, fresh: bool) -> void:
 	var st: GameState
 	if fresh:
 		SaveManager.delete_save(id)
-		st = GameState.new(id)
+		st = GameState.new(id.trim_suffix("_sandbox"))
+		st.sandbox = id.ends_with("_sandbox")
 		st.tutorial_step = 0 if not SaveManager.progress.get("tutorial_done", false) else 6
+		if st.sandbox:
+			st.tutorial_step = 6
 	else:
 		st = SaveManager.load_game(id)
 	var g := GameScreen.new()

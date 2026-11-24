@@ -284,6 +284,7 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 	del.pressed.connect(func():
 		var m2 := Modal.confirm(gs.ui_layer, I18n.t("confirm_delete_line") % l["name"], func():
 			var lname: String = l["name"]
+			st.log_remove(lid)
 			var refund := st.net.remove_line(lid)
 			st.feed.on_line_removed(st, lname)
 			st.refund(refund)
@@ -370,6 +371,9 @@ func station_sheet(sid: int) -> Sheet:
 	sh.body.add_child(grid)
 	if s["lines"].size() > 1:
 		sh.body.add_child(UI.label("⇄ " + I18n.t("transfer"), 24, Palette.GOOD, 850))
+	var rn := UI.button(I18n.t("rename_station"), "", "build", 64)
+	rn.pressed.connect(func(): gs.show_modal(rename_modal(sid)))
+	sh.body.add_child(rn)
 	# extend shortcut when station is a line end
 	for lid in s["lines"]:
 		var l: Dictionary = st.net.lines[lid]
@@ -535,9 +539,19 @@ func year_report(r: Dictionary) -> Modal:
 	b.add_child(UI.stat_row(I18n.t("coverage"), "%d%%" % int(r["coverage"] * 100.0)))
 	b.add_child(UI.stat_row(I18n.t("lines_count"), str(r["lines"])))
 	b.add_child(UI.stat_row(I18n.t("net_cash"), Geo.fmt_money(r["cash"]), Palette.ACCENT))
+	var row := UI.hbox(12)
+	var tl := UI.button(I18n.t("timelapse"), "", "calendar")
+	tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	tl.pressed.connect(func():
+		m.close()
+		gs.show_modal(timelapse_modal())
+	)
+	row.add_child(tl)
 	var ok := UI.button(I18n.t("continue"), "AccentButton", "play")
+	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ok.pressed.connect(m.close)
-	b.add_child(ok)
+	row.add_child(ok)
+	b.add_child(row)
 	return m
 
 
@@ -624,3 +638,139 @@ func _fill_social(content: VBoxContainer, s: Sheet) -> void:
 			break
 	if shown == 0:
 		content.add_child(UI.wrap_label(I18n.t("social_empty"), 23, Palette.MUTED))
+
+
+# ------------------------------------------------------------------ research ("Ar-Ge")
+
+func tech_sheet() -> Sheet:
+	var s := Sheet.create(I18n.t("tech_title"), 0.85)
+	var content := UI.vbox(12)
+	s.body.add_child(content)
+	var fill := func():
+		UI.clear(content)
+		_fill_tech(content)
+	fill.call()
+	s.set_meta("live", fill)
+	return s
+
+
+func _fill_tech(content: VBoxContainer) -> void:
+	var st := _st()
+	content.add_child(UI.wrap_label(I18n.t("tech_hint"), 21, Palette.FAINT))
+	if not st.research.is_empty():
+		var cur := UI.card()
+		var cv := UI.vbox(8)
+		var rid: String = st.research["id"]
+		var hh := UI.hbox(10)
+		hh.add_child(Icon.make("flask", 36, Palette.INFO))
+		var tl := UI.label(I18n.t("tech_running") + ": " + I18n.t("tech_" + rid), 24, Palette.TEXT, 850)
+		tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		tl.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		hh.add_child(tl)
+		cv.add_child(hh)
+		var total: int = st.research["total"]
+		var left: int = st.research["months"]
+		cv.add_child(UI.progress(1.0 - float(left) / total, Palette.INFO, 12.0))
+		cv.add_child(UI.label(I18n.t("months_left") % left, 20, Palette.MUTED))
+		cur.add_child(cv)
+		content.add_child(cur)
+	for id in TechData.ORDER:
+		content.add_child(_tech_card(id))
+
+
+func _tech_card(id: String) -> Control:
+	var st := _st()
+	var t := TechData.get_tech(id)
+	var state := st.tech_state(id)
+	var done := state == "done"
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.box(Color("16302c") if done else Palette.PANEL_2, 22, 2 if done else 0, Color(Palette.GOOD, 0.5), 18, 14))
+	var h := UI.hbox(14)
+	var ic := Icon.make(t["icon"], 44, Palette.GOOD if done else (Palette.TEXT if state == "available" else Palette.FAINT))
+	ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	h.add_child(ic)
+	var v := UI.vbox(4)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	v.add_child(UI.label(I18n.t("tech_" + id), 26, Palette.TEXT, 900))
+	v.add_child(UI.wrap_label(I18n.t("tech_" + id + "_d"), 20, Palette.MUTED))
+	var info := ""
+	match state:
+		"done": info = "✓ " + I18n.t("tech_done")
+		"running": info = I18n.t("tech_running")
+		"locked_year": info = I18n.t("tech_from_year") % int(t["year"])
+		"locked_req": info = I18n.t("tech_requires") % I18n.t("tech_" + str(t["requires"]))
+		"busy": info = I18n.t("tech_busy")
+		_: info = "%s · %d %s" % [Geo.fmt_money(t["cost"]), int(t["months"]), I18n.t("months_short")]
+	v.add_child(UI.label(info, 20, Palette.GOOD if done else Palette.ACCENT, 800))
+	h.add_child(v)
+	if state == "available":
+		var b := UI.button(I18n.t("tech_start"), "AccentButton", "", 64)
+		b.add_theme_font_size_override("font_size", 21)
+		b.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		b.disabled = not st.can_afford(t["cost"])
+		b.pressed.connect(func():
+			if st.start_research(id):
+				Audio.play("cash")
+				gs.toast.show_msg(I18n.t("tech_started") % I18n.t("tech_" + id), "info")
+				gs._update_hud()
+				gs._refresh_live_sheet()
+			else:
+				gs._error(I18n.t("not_enough_cash"))
+		)
+		h.add_child(b)
+	card.add_child(h)
+	return card
+
+
+# ------------------------------------------------------------------ timelapse
+
+func timelapse_modal() -> Modal:
+	var st := _st()
+	var m := Modal.create(I18n.t("timelapse"), 900.0)
+	var vs := gs.root_ui.get_viewport_rect().size
+	var tv := TimelapseView.new()
+	tv.setup(st)
+	tv.custom_minimum_size = Vector2(minf(840.0, vs.x - 110.0), minf(760.0, vs.y * 0.55))
+	m.body.add_child(tv)
+	var row := UI.hbox(12)
+	var again := UI.button(I18n.t("replay"), "", "undo")
+	again.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	again.pressed.connect(tv.restart)
+	row.add_child(again)
+	var ok := UI.button(I18n.t("close"), "AccentButton")
+	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ok.pressed.connect(m.close)
+	row.add_child(ok)
+	m.body.add_child(row)
+	return m
+
+
+# ------------------------------------------------------------------ rename station
+
+func rename_modal(sid: int) -> Modal:
+	var st := _st()
+	var m := Modal.create(I18n.t("rename_station"), 620.0)
+	var le := LineEdit.new()
+	le.text = st.net.station_display_name(sid)
+	le.max_length = 28
+	le.custom_minimum_size.y = 76
+	le.add_theme_font_size_override("font_size", 28)
+	le.add_theme_stylebox_override("normal", ThemeBuilder.box(Palette.PANEL_2, 18, 2, Palette.STROKE, 18, 10))
+	le.add_theme_stylebox_override("focus", ThemeBuilder.box(Palette.PANEL_2, 18, 2, Palette.ACCENT, 18, 10))
+	le.select_all_on_focus = true
+	m.body.add_child(le)
+	var apply := func():
+		if le.text.strip_edges() != "":
+			st.net.rename_station(sid, le.text)
+			gs.world.network.queue_redraw()
+			Audio.play("place")
+			gs.check_achievements()
+		m.close()
+		if is_instance_valid(gs.sheet):
+			gs.sheet.close()
+	le.text_submitted.connect(func(_t): apply.call())
+	var ok := UI.button(I18n.t("ok"), "AccentButton")
+	ok.pressed.connect(apply)
+	m.body.add_child(ok)
+	le.call_deferred("grab_focus")
+	return m

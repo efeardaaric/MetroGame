@@ -9,6 +9,7 @@ signal goals_changed(newly_completed: Array)
 signal ridership_updated
 signal bankrupt
 signal event_started(event_id: String)
+signal tech_completed(tech_id: String)
 
 const START_YEAR := 2026
 const FARE := 10.0            # ₺ per linked trip
@@ -41,6 +42,10 @@ var dirty := true
 var tutorial_step := 0
 var total_built := 0.0
 var feed := SocialFeed.new()
+var researched: Array = []      # tech ids
+var research := {}              # {id, months, total} while a project runs
+var sandbox := false
+var build_log: Array = []       # timelapse: [{y, m, lid, mode, color, pts, op}]
 var active_events: Array = []   # [{id, months}]
 var _ev_rng := RandomNumberGenerator.new()
 var async_demand := false   # GameScreen enables this so heavy recomputes run on a worker thread
@@ -56,12 +61,14 @@ func _init(id: String) -> void:
 	cash = city.data["start_cash"]
 	net.changed.connect(func(): dirty = true)
 	_ev_rng.randomize()
+	net.tech = researched
 	_update_mods()
 
 
 ## Recomputes seasonal + event demand modifiers; marks demand dirty when they change.
 func _update_mods() -> void:
 	var m := CityEvents.combine(CityEvents.seasonal_mods(city, month), CityEvents.event_mods(active_events))
+	m = CityEvents.combine(m, TechData.demand_mods(researched))
 	if m != demand.mods:
 		demand.mods = m
 		dirty = true
@@ -83,11 +90,19 @@ func has_event(eid: String) -> bool:
 	return false
 
 
+## Save slot name: sandbox games live in their own slot.
+func slot() -> String:
+	return city_id + ("_sandbox" if sandbox else "")
+
+
 func years_elapsed() -> float:
 	return (year - START_YEAR) + month / 12.0
 
 
 func spend(amount: float) -> bool:
+	if sandbox:
+		total_built += amount
+		return true
 	if amount > cash + credit_limit():
 		return false
 	cash -= amount
@@ -108,7 +123,7 @@ func credit_limit() -> float:
 
 
 func can_afford(amount: float) -> bool:
-	return amount <= cash + credit_limit()
+	return sandbox or amount <= cash + credit_limit()
 
 
 func recompute_if_dirty() -> void:
@@ -121,6 +136,7 @@ func recompute_if_dirty() -> void:
 		dirty = false
 		var snap_net := TransitNetwork.new(city)
 		snap_net.from_dict(net.to_dict())
+		snap_net.tech = researched.duplicate()
 		_pending = DemandModel.new(city, snap_net)
 		_pending.mods = demand.mods.duplicate(true)
 		var job := _pending
@@ -169,7 +185,7 @@ func monthly_grant() -> float:
 
 
 func monthly_income() -> float:
-	return riders * 30.0 * FARE / 1_000_000.0
+	return riders * 30.0 * FARE * TechData.mult(researched, "fare") / 1_000_000.0
 
 
 func monthly_expense() -> float:
@@ -210,6 +226,8 @@ func _end_month() -> void:
 	cash_changed.emit()
 	month_passed.emit()
 	check_goals()
+	if sandbox:
+		debt_months = 0
 	if debt_months >= DEBT_MONTHS_LIMIT:
 		game_over = true
 		bankrupt.emit()
@@ -218,7 +236,65 @@ func _end_month() -> void:
 	if month >= 12:
 		_end_year()
 	_tick_events()
+	_tick_research()
 	feed.monthly(self)
+
+
+# ---------------------------------------------------------------- research
+
+func tech_state(id: String) -> String:
+	if researched.has(id):
+		return "done"
+	if research.get("id", "") == id:
+		return "running"
+	var t := TechData.get_tech(id)
+	if year < int(t.get("year", 0)):
+		return "locked_year"
+	if t.has("requires") and not researched.has(t["requires"]):
+		return "locked_req"
+	if not research.is_empty():
+		return "busy"
+	return "available"
+
+
+func start_research(id: String) -> bool:
+	if tech_state(id) != "available":
+		return false
+	var t := TechData.get_tech(id)
+	if not spend(t["cost"]):
+		return false
+	research = {"id": id, "months": int(t["months"]), "total": int(t["months"])}
+	return true
+
+
+func _tick_research() -> void:
+	if research.is_empty():
+		return
+	research["months"] = int(research["months"]) - 1
+	if research["months"] <= 0:
+		var id: String = research["id"]
+		research = {}
+		researched.append(id)
+		_update_mods()
+		dirty = true
+		feed.on_tech(self, id)
+		tech_completed.emit(id)
+
+
+# ---------------------------------------------------------------- timelapse log
+
+func log_line(lid: int) -> void:
+	if not net.lines.has(lid):
+		return
+	var l: Dictionary = net.lines[lid]
+	var pts: Array = []
+	for p in net.line_path(l):
+		pts.append([snappedf(p.x, 0.01), snappedf(p.y, 0.01)])
+	build_log.append({"y": year, "m": month, "lid": lid, "mode": l["mode"], "color": l["color"], "pts": pts, "op": "set"})
+
+
+func log_remove(lid: int) -> void:
+	build_log.append({"y": year, "m": month, "lid": lid, "op": "del"})
 
 
 func _tick_events() -> void:
@@ -372,6 +448,7 @@ func to_dict() -> Dictionary:
 		"best_riders": best_riders, "game_over": game_over, "tutorial_step": tutorial_step,
 		"total_built": total_built, "network": net.to_dict(),
 		"feed": feed.to_dict(), "events": active_events,
+		"researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
 	}
 
 
@@ -396,6 +473,11 @@ func from_dict(d: Dictionary) -> void:
 	city.grow(years_elapsed())
 	net.from_dict(d.get("network", {}))
 	feed.from_dict(d.get("feed", {}))
+	researched.clear()
+	researched.append_array(d.get("researched", []))
+	research = d.get("research", {})
+	sandbox = d.get("sandbox", false)
+	build_log = d.get("build_log", [])
 	active_events = d.get("events", [])
 	_update_mods()
 	dirty = true

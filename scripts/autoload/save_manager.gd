@@ -45,10 +45,13 @@ func is_unlocked(id: String) -> bool:
 
 
 func record_result(state: GameState) -> void:
+	progress["last_city"] = state.slot()
+	if state.sandbox:
+		save_progress()
+		return
 	var id := state.city_id
 	progress["stars"][id] = max(city_stars(id), state.stars())
 	progress["best_riders"][id] = max(float(progress["best_riders"].get(id, 0.0)), state.best_riders)
-	progress["last_city"] = id
 	save_progress()
 
 
@@ -61,17 +64,20 @@ func has_save(id: String) -> bool:
 
 
 func save_game(state: GameState) -> void:
-	var f := FileAccess.open(save_path(state.city_id), FileAccess.WRITE)
+	var f := FileAccess.open(save_path(state.slot()), FileAccess.WRITE)
 	if f:
 		f.store_string(JSON.stringify(state.to_dict()))
 	record_result(state)
 
 
-func load_game(id: String) -> GameState:
+## `slot` is a city id, optionally suffixed with "_sandbox".
+func load_game(slot: String) -> GameState:
+	var id := slot.trim_suffix("_sandbox")
 	var st := GameState.new(id)
-	if not has_save(id):
+	st.sandbox = slot.ends_with("_sandbox")
+	if not has_save(slot):
 		return st
-	var f := FileAccess.open(save_path(id), FileAccess.READ)
+	var f := FileAccess.open(save_path(slot), FileAccess.READ)
 	if f == null:
 		return st
 	var parsed = JSON.parse_string(f.get_as_text())

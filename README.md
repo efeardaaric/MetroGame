@@ -57,6 +57,18 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
   sahil talebini artırır, **imbat** rüzgârı vapuru daha cazip yapar, **Eylül'de Enternasyonal Fuar**
   Kültürpark'a talebi 3 katına çıkarır. Tarihi Asansör, Kadifekale.
 
+### Premium özellikler
+- **Gece-gündüz döngüsü**: harita şafakta turuncuya, gece laciverte döner; semtlerin ışıkları,
+  istasyonlar, köprüler ve trenlerin farları yanar. HUD'da saat ve güneş/ay ikonu. (Ayarlardan kapatılabilir.)
+- **Ar-Ge teknolojileri** (10 proje): Temassız bilet, canlı sefer bilgisi, klimalı filo, prefabrik
+  istasyon, elektrikli metrobüs, hızlı vapur, peron kapıları, CBTC sinyalizasyon, yeni nesil TBM,
+  sürücüsüz metro. Aylarca süren araştırma, yıl/ön koşul kilitleri, ağın tamamına kalıcı etki.
+- **Başarımlar** (19 adet): altın açılış bandı, ana menüden ve duraklat menüsünden liste.
+  (Game Center / Google Play Games'e bağlanmaya hazır kimlikler.)
+- **Zaman Tüneli**: ağının kuruluşundan bugüne büyümesini animasyonla izle (yıl sonu raporundan da açılır).
+- **Serbest mod**: sınırsız bütçe, iflas yok; ayrı kayıt yuvası, yıldız/başarım vermez.
+- **Durak adlandırma**: istediğin durağa kendi ismini ver.
+
 ### Sosyal medya: "Cıvıltı"
 Şehir halkı kararlarına sosyal ağda tepki verir: yeni hat açılışında sevinç gönderileri, havalimanı/
 kampüs bağlantılarına teşekkürler, kalabalık ve seyrek seferlere şikayetler (@rayagi_resmi etiketli),
@@ -153,3 +165,4 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 | ![](docs/screenshots/01_menu.png) | ![](docs/screenshots/02_network.png) | ![](docs/screenshots/03_line.png) |
 | ![](docs/screenshots/04_profile.png) | ![](docs/screenshots/05_cities_landscape.png) | ![](docs/screenshots/06_izmir_landscape.png) |
 | ![](docs/screenshots/07_bosphorus.png) | ![](docs/screenshots/08_social.png) | ![](docs/screenshots/09_ankara_snow.png) |
+| ![](docs/screenshots/10_night.png) | ![](docs/screenshots/11_tech.png) | ![](docs/screenshots/12_timelapse.png) |

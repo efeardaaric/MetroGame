@@ -130,5 +130,23 @@ func _run() -> void:
 	g.open_social()
 	await wait(1.0)
 	await shot("15_social")
+	g.sheet.close()
+	await wait(0.3)
+	g.world.day_t = 0.92
+	g._set_speed(1)
+	z = 0.16
+	g.world.camera.position = st.city.project(29.0, 41.03) * MapLayer.PX
+	g.world.camera.zoom = Vector2(z, z)
+	g.world._on_zoom(z)
+	g.check_achievements()
+	await wait(1.2)
+	await shot("16_night_achievement")
+	g.open_tech()
+	await wait(0.8)
+	await shot("17_tech")
+	g.sheet.close()
+	g.show_modal(g.panels.timelapse_modal())
+	await wait(3.0)
+	await shot("18_timelapse")
 	print("FPS ", Engine.get_frames_per_second())
 	get_tree().quit()

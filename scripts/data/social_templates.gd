@@ -161,6 +161,14 @@ const T := {
 	"ev_summer": [
 		["Yaz geldi, sahil vapurları turist dolu ☀️ #İzmir", "Summer is here, coastal ferries are full of tourists ☀️ #Izmir", 0.6],
 	],
+	"tech_official": [
+		["Ar-Ge projemiz tamamlandı: {tech}. Yolculuklarınız artık daha iyi! 🚀", "Our R&D project is complete: {tech}. Your trips just got better! 🚀", 0.6],
+	],
+	"tech_citizen": [
+		["{tech} gelmiş, gerçekten fark ediliyor 👌 #teknoloji", "{tech} is here and you can really feel the difference 👌 #tech", 0.7],
+		["Bu şehrin ulaşımı Avrupa'yı aratmıyor artık. {tech} 👏", "Our city's transit rivals Europe now. {tech} 👏", 0.8],
+		["{tech} güzel de bilet fiyatı artmasın yeter 😅", "{tech} is nice, just don't raise the fare 😅", 0.1],
+	],
 	"flavor_istanbul": [
 		["Martılar yine vapurun peşinde, simit atanlara selam 🐦 #İstanbul", "The gulls are chasing the ferry again, hi to everyone tossing simit 🐦 #Istanbul", 0.7],
 		["Boğaz'ın altından 4 dakikada karşıya geçmek… mühendislik harikası", "Crossing under the Bosphorus in 4 minutes… an engineering marvel", 0.8],

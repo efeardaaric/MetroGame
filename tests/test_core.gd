@@ -87,6 +87,31 @@ func _run() -> void:
 	check(SocialFeed.tr_suffix("Bostancı", "a") == "ya", "Bostancı'ya")
 	check(SocialFeed.tr_suffix("M4", "da") == "te", "M4'te")
 	check(SocialFeed.tr_suffix("Kadıköy", "dan") == "den", "Kadıköy'den")
+	# research
+	var r_st := GameState.new("istanbul")
+	check(r_st.tech_state("driverless") == "locked_year", "driverless locked until 2030")
+	check(r_st.start_research("contactless"), "start contactless research")
+	check(r_st.tech_state("realtime") == "busy", "one project at a time")
+	var inc0 := r_st.monthly_income()
+	for i in 3:
+		r_st._end_month()
+	check(r_st.researched.has("contactless"), "research completes after months")
+	r_st.riders = 100000.0
+	check(r_st.monthly_income() > 100000.0 * 30.0 * GameState.FARE / 1e6 * 1.05, "contactless raises fare income")
+	var c1 := r_st.net.evaluate_draft("metro", false, [{"pos": Vector2(20, 30), "sid": -1}, {"pos": Vector2(22, 30), "sid": -1}])
+	r_st.researched.append("prefab")
+	var c2 := r_st.net.evaluate_draft("metro", false, [{"pos": Vector2(20, 30), "sid": -1}, {"pos": Vector2(22, 30), "sid": -1}])
+	check(c2["cost"] < c1["cost"], "prefab stations are cheaper")
+	# sandbox
+	var sbx := GameState.new("ankara")
+	sbx.sandbox = true
+	var before := sbx.cash
+	check(sbx.spend(1e7) and sbx.cash == before, "sandbox spending is free")
+	check(sbx.slot() == "ankara_sandbox", "sandbox slot")
+	check(Achievements.check(sbx).is_empty(), "no achievements in sandbox")
+	# timelapse log
+	st.log_line(st.net.lines.keys()[0])
+	check(st.build_log.size() == 1 and st.build_log[0]["pts"].size() >= 2, "timelapse log entry")
 	# seasonal modifiers
 	var a_st := GameState.new("ankara")
 	a_st.month = 0

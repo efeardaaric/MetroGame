@@ -257,6 +257,7 @@ func compute() -> void:
 	if wsum > 0.0:
 		sat -= load_pen / wsum + wait_pen / wsum
 	sat += clampf((35.0 - avg_trip_min) * 0.4, -10.0, 10.0)
+	sat += float(mods.get("sat_add", 0.0))
 	satisfaction = clampf(sat, 5.0, 100.0)
 
 
@@ -301,7 +302,8 @@ func _build_graph(op_lines: Array) -> Dictionary:
 		var lid: int = l["id"]
 		var m := TransitModes.get_mode(l["mode"])
 		var spd: float = m["speed"] * float(speed_m.get(l["mode"], 1.0))
-		var wait: float = min(net.line_headway_min(l) * 0.5, 15.0)
+		var wait: float = minf(net.line_headway_min(l) * 0.5, 15.0) * float(mods.get("wait", 1.0))
+		var tpen: float = TRANSFER_PENALTY * float(mods.get("transfer", 1.0))
 		var st: Array = l["stations"]
 		var route_nodes: Array = []
 		for sid in st:
@@ -309,8 +311,8 @@ func _build_graph(op_lines: Array) -> Dictionary:
 			node_count += 1
 			adj.append([])
 			route_nodes.append(rn)
-			adj[hub_of[sid]].append([rn, wait + TRANSFER_PENALTY * 0.5, 0, lid, sid])
-			adj[rn].append([hub_of[sid], TRANSFER_PENALTY * 0.5, 1, lid, sid])
+			adj[hub_of[sid]].append([rn, wait + tpen * 0.5, 0, lid, sid])
+			adj[rn].append([hub_of[sid], tpen * 0.5, 1, lid, sid])
 		var n := st.size()
 		var segs := n if l.get("loop", false) else n - 1
 		var comfort: float = m["comfort"] * float(comfort_m.get(l["mode"], 1.0))
@@ -318,7 +320,7 @@ func _build_graph(op_lines: Array) -> Dictionary:
 			var a: int = k
 			var b: int = (k + 1) % n
 			var d: float = net.stations[st[a]]["pos"].distance_to(net.stations[st[b]]["pos"])
-			var t: float = (d / spd * 60.0 + m["dwell_min"]) / comfort
+			var t: float = (d / spd * 60.0 + m["dwell_min"] * float(mods.get("dwell", 1.0))) / comfort
 			adj[route_nodes[a]].append([route_nodes[b], t, 2, lid, k * 2])
 			adj[route_nodes[b]].append([route_nodes[a], t, 2, lid, k * 2 + 1])
 	# walking transfers between nearby stations
