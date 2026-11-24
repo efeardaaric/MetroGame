@@ -208,8 +208,8 @@ const STRINGS := {
 		"• İnşa: Bir sistem seç, haritaya dokunarak durak ekle, Bitir'e bas.\n• Mevcut bir durağa dokunursan aktarma noktası olur. Hat ucundaki durakla başlarsan hattı uzatırsın.\n• Metro yer altından gider: Sığ tünel ucuz, derin tünel denizin altından geçer.\n• Tramvay, metrobüs ve banliyö yüzeyde çalışır; dik yokuşları çıkamaz ve sadece kısa köprü kurabilir.\n• Füniküler tepelere tırmanır, vapur körfezleri ve boğazları geçer.\n• Hatlar sekmesinden araç sayısını (sefer sıklığını) ve depo kapasitesini yönet.\n• Yolcular yoğun semtlerden (Nüfus) iş ve cazibe merkezlerine (Çekim) gider. Yolculuk arabadan hızlıysa raylı sistemi seçerler.\n• Aylık bilet geliri + belediye desteği işletme giderlerini karşılamalı. Borç limitini 6 ay aşarsan iflas edersin.\n• Hedefleri tamamlayarak yıldız kazan.",
 		"• Build: pick a system, tap the map to add stops, then tap Finish.\n• Tap an existing stop to create a transfer. Start at a line's end stop to extend that line.\n• Metro runs underground: shallow tunnels are cheap, deep tunnels pass under the sea.\n• Tram, metrobus and commuter rail run on the surface; they can't climb steep hills and only build short bridges.\n• Funiculars climb hills, ferries cross bays and straits.\n• In the Lines tab manage vehicles (frequency) and depot capacity.\n• Riders travel from dense districts (Population) to job & leisure hubs (Attraction). They choose rail if it beats the car.\n• Monthly fares + city grant must cover operating costs. Stay over the credit limit for 6 months and you go bankrupt.\n• Complete goals to earn stars."],
 	"credits_body": [
-		"Metro Tycoon: Türkiye\n\nOyun tasarımı ve programlama: Metro Tycoon ekibi\nMotor: Godot Engine (MIT)\nYazı tipleri: Nunito, Bricolage Grotesque, Doto (SIL Open Font License)\nMüzik ve efektler: oyun için özgün olarak üretildi\nOrtam sesleri (martı, dalga, trafik): OpenGameArt, CC0\nEmoji yazı tipi: Noto Emoji (SIL OFL)\nHarita verileri: basitleştirilmiş, elle çizilmiş şehir silüetleri\n\nOynadığın için teşekkürler!",
-		"Metro Tycoon: Türkiye\n\nGame design & programming: Metro Tycoon team\nEngine: Godot Engine (MIT)\nFonts: Nunito, Bricolage Grotesque, Doto (SIL Open Font License)\nMusic & SFX: original, made for this game\nAmbience (gulls, waves, traffic): OpenGameArt, CC0\nEmoji font: Noto Emoji (SIL OFL)\nMap data: simplified, hand-drawn city outlines\n\nThanks for playing!"],
+		"Metro Tycoon: Türkiye\n\nYapımcı, oyun tasarımı ve programlama:\nEfe Arda Arıç\n\nMotor: Godot Engine (MIT)\nYazı tipleri: Nunito, Bricolage Grotesque, Doto (SIL Open Font License)\nMüzik ve efektler: oyun için özgün olarak üretildi\nOrtam sesleri (martı, dalga, trafik): OpenGameArt, CC0\nEmoji yazı tipi: Noto Emoji (SIL OFL)\nHarita verileri: basitleştirilmiş, elle çizilmiş şehir silüetleri\n\nOynadığın için teşekkürler!\n\n© 2026 Efe Arda Arıç",
+		"Metro Tycoon: Türkiye\n\nCreated, designed and programmed by:\nEfe Arda Arıç\n\nEngine: Godot Engine (MIT)\nFonts: Nunito, Bricolage Grotesque, Doto (SIL Open Font License)\nMusic & SFX: original, made for this game\nAmbience (gulls, waves, traffic): OpenGameArt, CC0\nEmoji font: Noto Emoji (SIL OFL)\nMap data: simplified, hand-drawn city outlines\n\nThanks for playing!\n\n© 2026 Efe Arda Arıç"],
 	# ---- POIs
 	"poi_ist_airport": ["İstanbul Havalimanı", "Istanbul Airport"],
 	"poi_saw_airport": ["Sabiha Gökçen", "Sabiha Gökçen"],
@@ -624,7 +624,7 @@ const STRINGS := {
 	# ---- real events
 	"re_ist_ecoc": ["2010 Avrupa Kültür Başkenti", "2010 European Capital of Culture"],
 	"re_ist_marathon": ["İstanbul Maratonu", "Istanbul Marathon"],
-	"re_ist_ucl": ["Şampiyonlar Ligi Finali", "Champions League Final"],
+	"re_ist_ucl": ["Avrupa Kupası Finali", "European Cup Final"],
 	"re_ank_centenary": ["Cumhuriyet'in 100. Yılı", "Republic Centenary"],
 	"re_ank_nato": ["NATO Zirvesi", "NATO Summit"],
 	"re_izm_quake": ["İzmir Depremi", "Izmir Earthquake"],

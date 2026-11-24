@@ -1,0 +1,46 @@
+# Builds the iOS app on a macOS runner and uploads it to App Store Connect / TestFlight.
+# Run it from the Actions tab ("Run workflow"). Required repository secrets:
+#   APPLE_TEAM_ID   10-character Team ID (developer.apple.com → Membership)
+#   ASC_KEY_ID      App Store Connect API key id (Users and Access → Integrations → Keys, role: Admin)
+#   ASC_ISSUER_ID   Issuer id shown on the same page
+#   ASC_KEY_P8      Contents of the downloaded AuthKey_XXXX.p8 file
+name: iOS TestFlight
+
+on:
+  workflow_dispatch:
+    inputs:
+      build_number:
+        description: "Build number (leave empty for a timestamp)"
+        required: false
+
+jobs:
+  testflight:
+    runs-on: macos-15
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: maxim-lobanov/setup-xcode@v1
+        with:
+          xcode-version: latest-stable
+      - name: Cache Godot + export templates
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cache/metrotycoon/Godot.app
+            ~/Library/Application Support/Godot/export_templates
+          key: godot-4.3-macos
+      - name: Write API key
+        env:
+          ASC_KEY_P8: ${{ secrets.ASC_KEY_P8 }}
+        run: |
+          mkdir -p ~/private_keys
+          printf '%s' "$ASC_KEY_P8" > ~/private_keys/AuthKey.p8
+      - name: Build & upload
+        env:
+          ASC_KEY_ID: ${{ secrets.ASC_KEY_ID }}
+          ASC_ISSUER_ID: ${{ secrets.ASC_ISSUER_ID }}
+          TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          BUILD_INPUT: ${{ github.event.inputs.build_number }}
+        run: |
+          export ASC_KEY_PATH=~/private_keys/AuthKey.p8
+          ./tools/ios_release_mac.sh "$TEAM_ID" "${BUILD_INPUT:-$(date +%Y%m%d%H%M)}"

@@ -1,5 +1,5 @@
 #!/bin/bash
-# Builds Ray Ağı for iOS on a Mac and installs it on a connected iPhone.
+# Builds Metro Tycoon for iOS on a Mac and installs it on a connected iPhone.
 #
 #   ./tools/ios_run_mac.sh <APPLE_TEAM_ID> [bundle_id]
 #
@@ -8,10 +8,10 @@
 set -euo pipefail
 
 TEAM_ID="${1:?Usage: $0 <APPLE_TEAM_ID> [bundle_id]}"
-BUNDLE_ID="${2:-com.rayagi.metro}"
+BUNDLE_ID="${2:-com.efeardaaric.metrotycoon}"
 GODOT_VERSION="4.3"
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
-CACHE="$HOME/.cache/rayagi"
+CACHE="$HOME/.cache/metrotycoon"
 GODOT_APP="$CACHE/Godot.app"
 GODOT="$GODOT_APP/Contents/MacOS/Godot"
 TPL_DIR="$HOME/Library/Application Support/Godot/export_templates/${GODOT_VERSION}.stable"
@@ -47,7 +47,7 @@ sed -i '' "s|application/export_project_only=false|application/export_project_on
 echo "==> Importing project"
 "$GODOT" --headless --path . --import || true
 echo "==> Exporting Xcode project"
-"$GODOT" --headless --path . --export-debug "iOS" "$OUT/RayAgi.ipa"
+"$GODOT" --headless --path . --export-debug "iOS" "$OUT/MetroTycoon.ipa"
 PROJ="$(ls -d "$OUT"/*.xcodeproj | head -1)"
 SCHEME="$(basename "$PROJ" .xcodeproj)"
 echo "    $PROJ"

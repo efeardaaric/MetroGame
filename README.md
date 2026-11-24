@@ -4,7 +4,9 @@
 mobil için baştan tasarlanmış bir ulaşım-strateji oyunu. **Godot 4.3** ile geliştirildi.
 
 > Mağaza adı **Metro Tycoon: Türkiye** (alt başlık: *Şehir Ulaşım Simülatörü*). Eski çalışma adı
-> "Ray Ağı"ydı; paket kimliği (`com.rayagi.metro`) yayından önce kendi hesabına göre değiştirilmelidir.
+> "Ray Ağı"ydı; paket kimliği (`com.efeardaaric.metrotycoon`) yayından önce kendi hesabına göre değiştirilmelidir.
+
+> **App Store'a çıkış adımları:** [docs/APP_STORE.md](docs/APP_STORE.md) · Yapımcı: **Efe Arda Arıç**
 
 ### Zamana karşı yarış: seçimler ve gerçek etkinlikler
 - Kampanya her şehirde **2010**'dan, ulaşıma büyük yatırımlar başlamadan önce başlar.
@@ -159,7 +161,7 @@ Türk şehir ulaşımından ilham alan özgün bir arayüz dili:
 
 ### Sosyal medya: "Cıvıltı"
 Şehir halkı kararlarına sosyal ağda tepki verir: yeni hat açılışında sevinç gönderileri, havalimanı/
-kampüs bağlantılarına teşekkürler, kalabalık ve seyrek seferlere şikayetler (@rayagi_resmi etiketli),
+kampüs bağlantılarına teşekkürler, kalabalık ve seyrek seferlere şikayetler (@metro_resmi etiketli),
 hat kapatınca öfke, yıl sonu haberleri, şehir olayları ve yerel tatlar (simit-martı, boyoz, ayaz…).
 - **Kamuoyu desteği** gönderilerin duygu ve beğeni sayısından hesaplanır; memnuniyetle birlikte
   belediye desteğini etkiler. Şikayet edilen hatta araç eklersen resmi hesap duyurur, halk teşekkür eder.
@@ -211,7 +213,7 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 2. *Editor Settings → Export → Android*: Android SDK ve Java (JDK 17) yollarını gir.
 3. Yayın anahtarı oluştur:
    ```bash
-   keytool -genkey -v -keystore release.keystore -alias rayagi -keyalg RSA -keysize 2048 -validity 10000
+   keytool -genkey -v -keystore release.keystore -alias metrotycoon -keyalg RSA -keysize 2048 -validity 10000
    ```
    *Project → Export → Android Play Store (AAB) → Keystore/Release* alanlarına gir
    (anahtarı **repoya koyma**; `.gitignore` zaten hariç tutuyor).
@@ -224,7 +226,7 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 ## iOS yayını
 
 1. macOS + Xcode 15+ gerekir. Apple Developer hesabı (yıllık).
-2. *Project → Export → iOS*: `App Store Team ID` ve `Bundle Identifier` (com.rayagi.metro) gir.
+2. *Project → Export → iOS*: `App Store Team ID` ve `Bundle Identifier` (com.efeardaaric.metrotycoon) gir.
 3. *Export Project* → `.ipa` veya "Export Project Only" ile Xcode projesi al;
    Xcode'da *Product → Archive → Distribute App → App Store Connect*.
 4. App Store Connect: fiyat katmanı seç (ücretli), ekran görüntüleri (6.7", 6.5", 5.5", iPad 12.9"),

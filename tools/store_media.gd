@@ -15,6 +15,8 @@ func _ready() -> void:
 			out_dir = a.substr(6)
 		if a.begins_with("--mode="):
 			mode = a.substr(7)
+		if a.begins_with("--lang="):
+			I18n.set_language(a.substr(7))
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	Settings.high_quality = true
 	SaveManager.progress = {"stars": {"istanbul": 3, "ankara": 3}, "best_riders": {}, "tutorial_done": true, "last_city": ""}
@@ -79,38 +81,57 @@ func _cam(lon: float, lat: float, z: float) -> void:
 	g.world._on_zoom(z)
 
 
+func _clear_modals() -> void:
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+
+
 func _shots() -> void:
 	await wait(1.2)
 	await shot("01_menu")
 	await _setup_network()
+	g.agenda.pop_holder.visible = false
 	g.world.day_t = 0.45
 	_cam(28.99, 41.02, 0.2)
 	await wait(1.5)
 	await shot("02_network")
-	_cam(28.985, 41.02, 0.55)
-	await wait(1.0)
-	await shot("03_closeup")
+	# derby day: jammed roads around the stadium
+	g.state.month = 3
+	g.state.active_events.append({"id": "derby", "months": 1})
+	g.state.active_events.append({"id": "bridge_traffic", "months": 1})
+	g.world.events.refresh()
+	_cam(29.03, 41.0, 0.42)
+	await wait(1.6)
+	await shot("03_derby")
+	g.state.active_events.clear()
+	g.world.events.refresh()
 	g.world.day_t = 0.9
 	_cam(29.0, 41.02, 0.17)
 	await wait(1.5)
 	await shot("04_night")
 	g.world.day_t = 0.45
+	# a real event announced: the 2023 European cup final
+	g.state.year = 2022
+	g.state.month = 0
+	g.state.calendar.monthly(g.state)
+	g.agenda.refresh()
+	await wait(1.4)
+	await shot("05_event")
+	_clear_modals()
+	g.agenda.open_election()
+	await wait(1.2)
+	await shot("06_election")
+	_clear_modals()
 	g.open_social()
 	await wait(1.0)
-	await shot("05_social")
+	await shot("07_social")
 	g.sheet.close()
 	var lid: int = g.state.net.lines.keys()[1]
 	g.show_modal(g.panels.profile_modal(lid))
 	await wait(1.5)
-	await shot("06_profile")
-	for c in g.ui_layer.get_children():
-		if c is Modal:
-			c.queue_free()
-	g.modal_count = 0
-	g.state.mgmt.pending = {"id": "union_wage"}
-	g._on_dilemma(g.state.mgmt.pending)
-	await wait(1.2)
-	await shot("07_decision")
+	await shot("08_profile")
 	get_tree().quit()
 
 

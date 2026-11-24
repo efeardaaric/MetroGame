@@ -303,7 +303,7 @@ const T := {
 		["İstanbul 2010 Avrupa Kültür Başkenti! Müzeler, konserler, festivaller 🎭", "Istanbul is the 2010 European Capital of Culture! Museums, concerts, festivals 🎭", 0.7],
 	],
 	"re_ist_ucl": [
-		["Şampiyonlar Ligi finali İstanbul'da! 70 bin taraftar Olimpiyat Stadı'na akıyor ⚽", "The Champions League final is in Istanbul! 70,000 fans heading to the Olympic Stadium ⚽", 0.4],
+		["Avrupa kupası finali İstanbul'da! 70 bin taraftar Olimpiyat Stadı'na akıyor ⚽", "The European cup final is in Istanbul! 70,000 fans heading to the Olympic Stadium ⚽", 0.4],
 	],
 	"re_ank_centenary": [
 		["Cumhuriyetimiz 100 yaşında! 🇹🇷 Kızılay'da büyük kutlama, havai fişekler 🎆", "Our Republic turns 100! 🇹🇷 Huge celebration in Kızılay, fireworks 🎆", 0.8],

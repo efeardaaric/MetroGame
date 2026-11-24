@@ -6,9 +6,9 @@ Oyun, Game Center / Google Play Games / native paylaşım için **hazır köprü
 
 ## 1. Game Center (iOS)
 1. App Store Connect → uygulama → *Game Center* bölümünü aç.
-2. Başarımları oluştur: kimlikler `com.rayagi.metro.<id>` biçiminde olmalı. `<id>` listesi
-   `scripts/core/achievements.gd` içindeki `LIST` (ör. `com.rayagi.metro.first_line`).
-3. Liderlik tablosu: `com.rayagi.metro.best_riders` (tamsayı, yüksek daha iyi).
+2. Başarımları oluştur: kimlikler `com.efeardaaric.metrotycoon.<id>` biçiminde olmalı. `<id>` listesi
+   `scripts/core/achievements.gd` içindeki `LIST` (ör. `com.efeardaaric.metrotycoon.first_line`).
+3. Liderlik tablosu: `com.efeardaaric.metrotycoon.best_riders` (tamsayı, yüksek daha iyi).
 4. Eklenti: [godot-ios-plugins](https://github.com/godot-sdk-integrations/godot-ios-plugins)
    içindeki **gamecenter** eklentisini derleyip `ios/plugins/` klasörüne koy,
    *Project → Export → iOS → Plugins* altında `GameCenter`'ı işaretle.

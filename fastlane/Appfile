@@ -1,0 +1,3 @@
+app_identifier("com.efeardaaric.metrotycoon")
+# apple_id("you@example.com")   # optional: your Apple ID, if you log in interactively
+# team_id("XXXXXXXXXX")         # or set FASTLANE_TEAM_ID

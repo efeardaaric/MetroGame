@@ -11,7 +11,7 @@ extends Node
 signal signed_in(ok: bool)
 
 # Achievement / leaderboard ids as created in App Store Connect & Play Console.
-const IOS_PREFIX := "com.rayagi.metro."
+const IOS_PREFIX := "com.efeardaaric.metrotycoon."
 var ANDROID_IDS := {} # fill with "CgkI..." ids from the Play Console: {"first_line": "CgkI..."}
 const LEADERBOARD := "best_riders"
 

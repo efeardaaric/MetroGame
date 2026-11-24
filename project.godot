@@ -5,7 +5,7 @@ config_version=5
 
 [application]
 
-config/name="Metro Tycoon: Türkiye"
+config/name="Metro Tycoon"
 config/description="İstanbul, Ankara ve İzmir'de kendi raylı sistem ağını kur."
 config/version="1.0.0"
 run/main_scene="res://scenes/main.tscn"

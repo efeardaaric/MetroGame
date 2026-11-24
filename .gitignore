@@ -14,3 +14,6 @@ export_credentials.cfg
 # OS
 .DS_Store
 Thumbs.db
+fastlane/screenshots/
+fastlane/report.xml
+fastlane/README.md
