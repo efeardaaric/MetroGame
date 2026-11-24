@@ -60,7 +60,7 @@ func _proj_list(pts: Array) -> PackedVector2Array:
 
 func _build_geometry() -> void:
 	for poly in data.get("water_polys", []):
-		water_polys.append(smooth_closed(_proj_list(poly), 3))
+		water_polys.append(smooth_closed(_push_out(_proj_list(poly)), 3))
 	for ch in data.get("channels", []):
 		var poly := _channel_poly(_proj_list(ch["pts"]), ch["w"])
 		if ch.get("river", false):
@@ -68,16 +68,113 @@ func _build_geometry() -> void:
 		else:
 			water_polys.append(poly)
 	for lk in data.get("lakes", []):
-		water_polys.append(Geo.ellipse(project(lk["lon"], lk["lat"]), lk["rx"], lk["ry"], lk.get("rot", 0.0), 28))
+		water_polys.append(Geo.blob(project(lk["lon"], lk["lat"]), lk["rx"], lk["ry"], lk.get("rot", 0.0), 72, hash(id) + water_polys.size(), 0.2))
 	for isl in data.get("islands", []):
-		island_polys.append(Geo.ellipse(project(isl["lon"], isl["lat"]), isl["rx"], isl["ry"], isl.get("rot", 0.0), 22))
+		island_polys.append(Geo.blob(project(isl["lon"], isl["lat"]), isl["rx"], isl["ry"], isl.get("rot", 0.0), 64, hash(id) * 3 + island_polys.size(), 0.22))
 	for pk in data.get("parks", []):
-		park_polys.append(Geo.ellipse(project(pk["lon"], pk["lat"]), pk["rx"], pk["ry"], pk.get("rot", 0.0), 30))
+		park_polys.append(Geo.blob(project(pk["lon"], pk["lat"]), pk["rx"], pk["ry"], pk.get("rot", 0.0), 60, hash(id) * 7 + park_polys.size(), 0.25))
 		park_names.append(pk.get("name_key", ""))
 	if data.get("divide", []).size() > 0:
 		divide = _proj_list(data["divide"])
 	for h in data.get("hills", []):
 		hills.append({"pos": project(h["lon"], h["lat"]), "h": h["h"], "r": h["r"]})
+
+
+## Moves vertices lying on the map frame well outside it, so coastline contours never
+## run along the edge of the map.
+func _push_out(poly: PackedVector2Array) -> PackedVector2Array:
+	var out := PackedVector2Array()
+	for p in poly:
+		var q := p
+		if q.x <= 0.15:
+			q.x = -4.0
+		elif q.x >= size_km.x - 0.15:
+			q.x = size_km.x + 4.0
+		if q.y <= 0.15:
+			q.y = -4.0
+		elif q.y >= size_km.y - 0.15:
+			q.y = size_km.y + 4.0
+		out.append(q)
+	return out
+
+
+var _union_cache: Array = []
+
+
+## Outline rings of all open water merged together (no internal overlaps). km space.
+func water_union() -> Array:
+	if not _union_cache.is_empty() or water_polys.is_empty():
+		return _union_cache
+	var acc: Array = []
+	for wp in water_polys:
+		var cur: PackedVector2Array = wp
+		var merged := true
+		while merged:
+			merged = false
+			for i in acc.size():
+				var res := Geometry2D.merge_polygons(acc[i], cur)
+				var outers := res.filter(func(r): return not Geometry2D.is_polygon_clockwise(r))
+				if outers.size() == 1:
+					cur = outers[0]
+					acc.remove_at(i)
+					merged = true
+					break
+		acc.append(cur)
+	_union_cache = acc
+	return acc
+
+
+## Rasterises distance-to-coast for the sea (used to tint shallow vs. deep water).
+func build_depth_image(step: float = 0.15) -> Image:
+	var w := int(ceil(size_km.x / step))
+	var h := int(ceil(size_km.y / step))
+	var big := 1e9
+	var d := PackedFloat32Array()
+	d.resize(w * h)
+	for y in h:
+		for x in w:
+			d[y * w + x] = big if is_sea(Vector2((x + 0.5) * step, (y + 0.5) * step)) else 0.0
+	# two-pass chamfer distance transform (in cells)
+	var a := 1.0
+	var b := 1.4142
+	for y in h:
+		for x in w:
+			var i := y * w + x
+			if d[i] == 0.0:
+				continue
+			var v := d[i]
+			if x > 0: v = minf(v, d[i - 1] + a)
+			if y > 0: v = minf(v, d[i - w] + a)
+			if x > 0 and y > 0: v = minf(v, d[i - w - 1] + b)
+			if x < w - 1 and y > 0: v = minf(v, d[i - w + 1] + b)
+			d[i] = v
+	for y in range(h - 1, -1, -1):
+		for x in range(w - 1, -1, -1):
+			var i := y * w + x
+			if d[i] == 0.0:
+				continue
+			var v := d[i]
+			if x < w - 1: v = minf(v, d[i + 1] + a)
+			if y < h - 1: v = minf(v, d[i + w] + a)
+			if x < w - 1 and y < h - 1: v = minf(v, d[i + w + 1] + b)
+			if x > 0 and y < h - 1: v = minf(v, d[i + w - 1] + b)
+			d[i] = v
+	var img := Image.create(w, h, false, Image.FORMAT_RGB8)
+	var shallow := Color("9fd8e6")
+	var mid := Color("86c3e2")
+	var deep := Color("5f9fd2")
+	for y in h:
+		for x in w:
+			var km: float = d[y * w + x] * step
+			if km >= big * 0.5:
+				km = 12.0
+			var c: Color
+			if km < 0.9:
+				c = shallow.lerp(mid, smoothstep(0.0, 0.9, km))
+			else:
+				c = mid.lerp(deep, smoothstep(0.9, 5.0, km))
+			img.set_pixel(x, y, c)
+	return img
 
 
 ## Chaikin corner cutting on a closed polygon → organic, curved coastlines.

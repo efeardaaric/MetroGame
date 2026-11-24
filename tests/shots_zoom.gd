@@ -48,4 +48,16 @@ func _run() -> void:
 	g.world.camera.position = g.state.city.project(29.06, 41.03) * MapLayer.PX
 	await wait(0.6)
 	await shot("Z3_hills")
+	z = 0.16
+	g.world.camera.position = g.state.city.project(28.98, 41.03) * MapLayer.PX
+	g.world.camera.zoom = Vector2(z, z)
+	g.world._on_zoom(z)
+	await wait(0.8)
+	await shot("Z4_overview")
+	z = 0.45
+	g.world.camera.position = g.state.city.project(29.08, 40.92) * MapLayer.PX
+	g.world.camera.zoom = Vector2(z, z)
+	g.world._on_zoom(z)
+	await wait(0.8)
+	await shot("Z5_islands")
 	get_tree().quit()

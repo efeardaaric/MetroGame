@@ -12,6 +12,20 @@ static func ellipse(center: Vector2, rx: float, ry: float, rot: float, segments:
 	return out
 
 
+## Organic blob: an ellipse whose radius wobbles with smooth noise (islands, lakes, forests).
+static func blob(center: Vector2, rx: float, ry: float, rot: float, segments: int, seed: int, rough: float = 0.22) -> PackedVector2Array:
+	var n := FastNoiseLite.new()
+	n.seed = seed
+	n.frequency = 1.6
+	n.fractal_octaves = 3
+	var out := PackedVector2Array()
+	for i in segments:
+		var a := TAU * i / segments
+		var k := 1.0 + rough * n.get_noise_2d(cos(a), sin(a))
+		out.append(center + (Vector2(cos(a) * rx, sin(a) * ry) * k).rotated(rot))
+	return out
+
+
 static func polyline_length(pts: PackedVector2Array) -> float:
 	var l := 0.0
 	for i in pts.size() - 1:

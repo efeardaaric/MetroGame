@@ -12,5 +12,6 @@ func _ready() -> void:
 		city.build_heat_image("pop").save_png("res://assets/maps/%s_pop.png" % id)
 		city.build_heat_image("jobs").save_png("res://assets/maps/%s_jobs.png" % id)
 		MapLayer.elev_image(city).save_png("res://assets/maps/%s_elev.png" % id)
+		city.build_depth_image().save_png("res://assets/maps/%s_depth.png" % id)
 		print(id, " baked in ", Time.get_ticks_msec() - t, " ms")
 	get_tree().quit()

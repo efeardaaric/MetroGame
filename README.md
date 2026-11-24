@@ -66,6 +66,16 @@ Türk şehir ulaşımından ilham alan özgün bir arayüz dili:
   su maskesi içermedikleri için kenar artefaktı yoktur. Hepsi mipmap + doğrusal filtreyle
   uzaklaştırmada da titremez. (Karşılaştırma: `docs/screenshots/17_zoom_before_after.png`)
 
+### Kartografik harita stili
+- **Deniz**: kıyıdan uzaklığa göre pişirilmiş derinlik dokusu (kıyıda turkuaz sığlık → açıkta
+  koyu mavi), birleşik kıyı çizgisinden içe doğru 4 eş-derinlik konturu, adaların çevresinde
+  halkalar, ince koyu kıyı hattı ve açık denizde hafifçe salınan "≈" dalga işaretleri.
+- **Kıyı**: iki tonlu kumsal bandı.
+- **Kara**: semt nüfus/istihdam yoğunluğuna göre sokak ızgarasına oturan yapı adaları
+  (iş merkezlerinde daha büyük ve koyu), semtleri bağlayan kavisli ana caddeler (en kısa yol ağacı +
+  yakın komşu bağlantıları, denizi geçmez), ormanlarda ağaç noktaları, hafif kâğıt dokusu.
+- Adalar, göller ve ormanlar gürültüyle bozulmuş **organik şekiller** (artık elips değil).
+
 ### Şehre özel detaylar ve mekanikler
 - **İstanbul**: Boğaz ve Marmara üzerinde uçan martı sürüleri ve martı sesleri, dalga ambiyansı,
   vapur düdüğü, 15 Temmuz / FSM / Yavuz Sultan Selim / Galata köprüleri, Galata Kulesi, Kız Kulesi,
@@ -208,3 +218,4 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 | ![](docs/screenshots/10_night.png) | ![](docs/screenshots/11_tech.png) | ![](docs/screenshots/12_timelapse.png) |
 | ![](docs/screenshots/13_decision.png) | ![](docs/screenshots/14_incident.png) | ![](docs/screenshots/15_management.png) |
 | ![](docs/screenshots/16_build_landscape.png) | | |
+| ![](docs/screenshots/18_map_overview.png) | ![](docs/screenshots/19_map_islands.png) | ![](docs/screenshots/20_map_closeup.png) |

@@ -72,6 +72,8 @@ func setup(c: CityMap) -> void:
 
 
 func set_zoom(z: float) -> void:
+	if absf(z - zoom) / maxf(zoom, 0.001) > 0.02:
+		queue_redraw()
 	zoom = z
 
 
