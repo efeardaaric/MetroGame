@@ -20,6 +20,7 @@ I18n="*res://scripts/autoload/i18n.gd"
 Settings="*res://scripts/autoload/settings.gd"
 Audio="*res://scripts/autoload/audio.gd"
 SaveManager="*res://scripts/autoload/save_manager.gd"
+Platform="*res://scripts/autoload/platform.gd"
 
 [display]
 

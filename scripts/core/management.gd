@@ -27,6 +27,7 @@ var loans: Array = []        # [{principal, monthly, months}]
 var fare_cap := {}           # {mult, months}
 var mission := {}            # active challenge
 var pending := {}            # decision awaiting the player
+var timed: Array = []        # temporary demand modifiers [{id, mods, months}] e.g. a rival app
 var _cooldown := 2
 var _mission_cd := 4
 var _rng := RandomNumberGenerator.new()
@@ -95,6 +96,9 @@ func demand_mods() -> Dictionary:
 	var m := {"fare_pen": (f - 1.0) * 12.0, "sat_add": sat}
 	if night:
 		m["demand"] = 1.03
+	for t in timed:
+		for k in t["mods"].keys():
+			m[k] = float(m.get(k, 1.0)) * float(t["mods"][k])
 	return m
 
 
@@ -128,6 +132,17 @@ func monthly(st: GameState) -> void:
 		if fare_cap["months"] <= 0:
 			fare_cap = {}
 			st._update_mods()
+	# temporary modifiers (rival services…)
+	var had := timed.size()
+	for t in timed:
+		t["months"] = int(t["months"]) - 1
+	timed = timed.filter(func(t): return int(t["months"]) > 0)
+	if timed.size() != had:
+		st._update_mods()
+	# fleets age
+	for l in st.net.lines.values():
+		if not l.has("con"):
+			l["age"] = int(l.get("age", 0)) + 1
 	# incidents expire
 	for l in st.net.lines.values():
 		if l.has("incident"):
@@ -139,7 +154,9 @@ func monthly(st: GameState) -> void:
 	for l in st.net.lines.values():
 		if l.has("incident") or l["mode"] == "ferry" and _rng.randf() < 0.5:
 			continue
-		var chance: float = 0.011 * MAINT_BREAKDOWN[maint] * (1.0 + float(l["vehicles"]) / 40.0)
+		if l.has("con") and int(l["con"]["lo"]) < 0:
+			continue
+		var chance: float = 0.011 * MAINT_BREAKDOWN[maint] * (1.0 + float(l["vehicles"]) / 40.0) * (1.0 + float(l.get("age", 0)) / 96.0)
 		if _rng.randf() < chance:
 			set_incident(st, l["id"], "breakdown", 0.5, 1 + _rng.randi() % 2)
 	# earthquakes (rare)
@@ -347,6 +364,10 @@ func resolve(st: GameState, idx: int) -> String:
 			extra = I18n.t("strike_avoided")
 	if o.has("mission"):
 		start_mission(st, o["mission"])
+	if o.has("rival"):
+		timed = timed.filter(func(t): return t["id"] != "rival")
+		timed.append({"id": "rival", "mods": {"car": 0.86}, "months": int(o["rival"])})
+		st.feed.post("rival", {}, st, "citizen", 1.2)
 	st._update_mods()
 	st.dirty = true
 	var post_cat := "dlg_%s_%d" % [id, idx + 1]
@@ -387,8 +408,10 @@ func start_mission(st: GameState, type: String) -> void:
 			m["y"] = best["pos"].y
 		"build_mode":
 			var options: Array = ["metro", "tram", "metrobus", "rail", "funicular"]
-			if not st.city.water_polys.is_empty() and st.city_id != "ankara":
+			if not st.city.water_polys.is_empty() and st.city_id not in ["ankara", "eskisehir", "bursa"]:
 				options.append("ferry")
+			if st.city_id in ["bursa", "trabzon", "izmir"]:
+				options.append("gondola")
 			var used := st.net.modes_in_use()
 			options = options.filter(func(x): return not used.has(x))
 			if options.is_empty():
@@ -477,7 +500,7 @@ func _tick_mission(st: GameState) -> void:
 
 func to_dict() -> Dictionary:
 	return {"fare": fare, "maint": maint, "night": night, "wage": wage, "sat_bonus": sat_bonus, "flags": flags,
-		"loans": loans, "fare_cap": fare_cap, "mission": mission, "cooldown": _cooldown, "mission_cd": _mission_cd}
+		"loans": loans, "fare_cap": fare_cap, "timed": timed, "mission": mission, "cooldown": _cooldown, "mission_cd": _mission_cd}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -489,6 +512,7 @@ func from_dict(d: Dictionary) -> void:
 	flags = d.get("flags", {})
 	loans = d.get("loans", [])
 	fare_cap = d.get("fare_cap", {})
+	timed = d.get("timed", [])
 	mission = d.get("mission", {})
 	_cooldown = int(d.get("cooldown", 2))
 	_mission_cd = int(d.get("mission_cd", 4))

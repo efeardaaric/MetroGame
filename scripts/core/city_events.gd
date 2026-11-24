@@ -51,6 +51,10 @@ static func seasonal_mods(city: CityMap, month: int) -> Dictionary:
 		mods = combine(mods, {"poi": poi})
 	if is_summer(city, month):
 		mods = combine(mods, {"comfort": {"ferry": 1.25}, "kind": {"landmark": 1.3}})
+	if f.get("tourism", false) and is_summer(city, month):
+		mods = combine(mods, {"kind": {"landmark": 1.25, "airport": 1.4}, "demand": 1.1})
+	if f.has("ski_poi") and is_winter(city, month):
+		mods = combine(mods, {"poi": {f["ski_poi"]: 3.0}})
 	if f.has("fair_month") and month == int(f["fair_month"]):
 		mods = combine(mods, {"poi": {f["fair_poi"]: 3.0}})
 	return mods

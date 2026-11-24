@@ -9,6 +9,25 @@ var network: NetworkLayer
 var vehicles: VehicleLayer
 var draft: DraftLayer
 var flavor: FlavorLayer
+var growth: GrowthLayer
+var diagram_veil: DiagramVeil
+
+
+## Cream "paper" laid over the geography in schematic mode.
+class DiagramVeil:
+	extends Node2D
+	var size_px := Vector2.ONE
+	func _draw() -> void:
+		draw_rect(Rect2(Vector2(-6000, -6000), size_px + Vector2(12000, 12000)), Color(Palette.CREAM, 0.88))
+		var g := NetworkLayer.DIAGRAM_GRID * 4.0
+		var x := 0.0
+		while x <= size_px.x:
+			draw_line(Vector2(x, 0), Vector2(x, size_px.y), Color(Palette.INK, 0.05), 3.0)
+			x += g
+		var y := 0.0
+		while y <= size_px.y:
+			draw_line(Vector2(0, y), Vector2(size_px.x, y), Color(Palette.INK, 0.05), 3.0)
+			y += g
 var daylight: CanvasModulate
 var lights_layer: CanvasLayer
 var lights: NightLights
@@ -22,12 +41,19 @@ func setup(s: GameState) -> void:
 	map = MapLayer.new()
 	add_child(map)
 	map.setup(s.city)
+	growth = GrowthLayer.new()
+	add_child(growth)
+	growth.setup(s)
 	flavor = FlavorLayer.new()
 	add_child(flavor)
 	flavor.setup(s.city)
 	labels = LabelLayer.new()
 	add_child(labels)
 	labels.setup(s.city)
+	diagram_veil = DiagramVeil.new()
+	diagram_veil.size_px = s.city.size_km * MapLayer.PX
+	diagram_veil.modulate.a = 0.0
+	add_child(diagram_veil)
 	network = NetworkLayer.new()
 	add_child(network)
 	network.setup(s.net, s.demand)
@@ -124,3 +150,27 @@ func is_night() -> bool:
 
 func focus_km(p: Vector2, z: float = -1.0) -> void:
 	camera.fly_to(p * MapLayer.PX, z)
+
+
+## Schematic metro-map view: octilinear lines, faded geography.
+func set_diagram(on: bool) -> void:
+	network.set_diagram(on)
+	var tw := create_tween().set_parallel(true)
+	tw.tween_property(diagram_veil, "modulate:a", 1.0 if on else 0.0, 0.3)
+	tw.tween_property(labels, "modulate:a", 0.0 if on else 1.0, 0.3)
+	tw.tween_property(flavor, "modulate:a", 0.0 if on else 1.0, 0.3)
+	tw.tween_property(growth, "modulate:a", 0.0 if on else 1.0, 0.3)
+
+
+## Quality switch for slower devices.
+func apply_quality(high: bool) -> void:
+	if map and map.water and map.water._waves:
+		map.water._waves.visible = high and not Settings.reduce_motion
+	if map:
+		for c in map.get_children():
+			if c is Sprite2D and c != map.hillshade and c != map.heat:
+				c.visible = high # paper grain
+	if lights:
+		lights.set_detail(high)
+	if flavor:
+		flavor.set_detail(high)

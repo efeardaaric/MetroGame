@@ -98,6 +98,63 @@ def main():
     shape = np.sin(np.linspace(0, math.pi, n)) ** 2
     save("swoosh", sw * shape * 0.6)
     music()
+    music_variant("music_night", 68, [[146.83, 185.0, 220.0, 277.18], [123.47, 146.83, 185.0, 220.0],
+                                      [98.0, 123.47, 146.83, 185.0], [110.0, 138.59, 164.81, 220.0]], soft=True)
+    music_variant("music_tense", 104, [[110.0, 130.81, 164.81, 220.0], [87.31, 110.0, 130.81, 174.61],
+                                       [73.42, 87.31, 110.0, 146.83], [82.41, 103.83, 123.47, 164.81]], soft=False)
+
+
+def music_variant(name, bpm, chords, soft):
+    """Mood loops for the dynamic soundtrack (same structure as the main loop)."""
+    sr = 22050
+    beat = 60.0 / bpm
+    bars = 16
+    n = int(bars * 4 * beat * sr)
+    out = np.zeros(n)
+    bar_len = 4 * beat
+    rng = np.random.default_rng(11 if soft else 5)
+    for b in range(bars):
+        ch = chords[(b // 2) % 4]
+        start = b * bar_len
+        s0 = int(start * sr)
+        seg_n = int(bar_len * sr)
+        tt = np.arange(seg_n) / sr
+        pad = sum(np.sin(2 * math.pi * f * tt) + 0.4 * np.sin(2 * math.pi * f * 1.004 * tt) for f in ch)
+        env_p = np.minimum(1, tt / (0.9 if soft else 0.2)) * np.minimum(1, (tt[-1] - tt) / 0.3 + 0.02)
+        e = min(n, s0 + seg_n)
+        out[s0:e] += (pad * env_p * (0.045 if soft else 0.03))[: e - s0]
+        steps = 4 if soft else 8
+        for k in range(steps):
+            st = start + k * bar_len / steps
+            if soft and rng.random() < 0.35:
+                continue
+            f = ch[(k * 3 + b) % 4] * (2 if soft else 1)
+            ln = int((1.2 if soft else 0.18) * sr)
+            t2 = np.arange(ln) / sr
+            if soft:
+                note = (np.sin(2 * math.pi * f * t2) + 0.25 * np.sin(4 * math.pi * f * t2)) * np.exp(-t2 / 0.5) * 0.06
+            else:
+                saw = 2 * ((f * t2) % 1) - 1
+                note = saw * np.exp(-t2 / 0.06) * 0.09
+            note *= np.minimum(1, t2 / 0.005)
+            a0 = int(st * sr)
+            e2 = min(n, a0 + ln)
+            out[a0:e2] += note[: e2 - a0]
+            if e2 - a0 < ln:
+                out[: ln - (e2 - a0)] += note[e2 - a0:]
+        if not soft:
+            # pulsing low drum on every beat
+            for k in range(4):
+                a0 = int((start + k * beat) * sr)
+                ln = int(0.25 * sr)
+                t2 = np.arange(ln) / sr
+                kick = np.sin(2 * math.pi * (55 + 60 * np.exp(-t2 * 30)) * t2) * np.exp(-t2 / 0.09) * 0.25
+                e2 = min(n, a0 + ln)
+                out[a0:e2] += kick[: e2 - a0]
+    d = int(0.29 * sr)
+    for _ in range(3):
+        out[d:] += out[:-d] * (0.3 if soft else 0.18)
+    save(name, out, sr)
 
 
 def music():
@@ -170,4 +227,12 @@ def music():
 
 
 if __name__ == "__main__":
-    main()
+    import sys
+    if len(sys.argv) > 1 and sys.argv[1] == "--music-only":
+        os.makedirs(OUT, exist_ok=True)
+        music_variant("music_night", 68, [[146.83, 185.0, 220.0, 277.18], [123.47, 146.83, 185.0, 220.0],
+                                          [98.0, 123.47, 146.83, 185.0], [110.0, 138.59, 164.81, 220.0]], soft=True)
+        music_variant("music_tense", 104, [[110.0, 130.81, 164.81, 220.0], [87.31, 110.0, 130.81, 174.61],
+                                           [73.42, 87.31, 110.0, 146.83], [82.41, 103.83, 123.47, 164.81]], soft=False)
+    else:
+        main()

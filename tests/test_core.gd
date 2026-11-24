@@ -169,6 +169,80 @@ func _run() -> void:
 		sim._end_month()
 	print("  5 years: %d decisions, %d incidents, wage %.2f" % [raised[0], incs[0], sim.mgmt.wage])
 	check(raised[0] >= 4, "decisions happen regularly")
+	# ---- construction, express, hubs, growth
+	var cs := GameState.new("istanbul")
+	cs.cash = 1e6
+	var clid := build(cs, "metro", false, [ll(cs, 28.87, 40.985), ll(cs, 28.905, 40.995), ll(cs, 28.948, 41.008), ll(cs, 28.977, 41.03), ll(cs, 28.987, 41.062), ll(cs, 29.012, 41.08), ll(cs, 29.02, 41.11)])
+	cs.recompute_if_dirty()
+	var open_r := cs.target_riders
+	cs.start_construction(clid, 3, 0, false, 1000.0)
+	cs.recompute_if_dirty()
+	check(cs.target_riders == 0.0, "line under construction carries nobody")
+	for i in 3:
+		cs._tick_construction()
+	if cs.net.lines[clid].has("con"):
+		for i in 4:
+			cs._tick_construction()
+	check(not cs.net.lines[clid].has("con"), "construction finishes (incl. possible overrun)")
+	cs.recompute_if_dirty()
+	check(absf(cs.target_riders - open_r) < 1.0, "ridership restored after opening")
+	var h_before := cs.net.line_headway_min(cs.net.lines[clid])
+	cs.net.lines[clid]["express"] = true
+	cs.dirty = true
+	cs.recompute_if_dirty()
+	check(cs.net.line_headway_min(cs.net.lines[clid]) < h_before, "express shortens the cycle")
+	print("    express riders %.0f vs local %.0f" % [cs.target_riders, open_r])
+	check(cs.target_riders > 0.0, "express line carries riders")
+	cs.net.lines[clid]["express"] = false
+	var t2lid := build(cs, "tram", false, [ll(cs, 28.905, 41.04), ll(cs, 28.93, 41.02), ll(cs, 28.948, 41.008)])
+	var hub_sid := cs.net.station_at(ll(cs, 28.948, 41.008), 0.4)
+	var zc := cs.city.zones.size()
+	check(cs.upgrade_hub(hub_sid) and cs.city.zones.size() == zc + 1, "hub adds a job centre")
+	cs.dirty = true
+	cs.recompute_if_dirty()
+	cs._develop_stations()
+	var devd := 0
+	for s0 in cs.net.stations.values():
+		if s0.get("dev", 0.0) > 0.0:
+			devd += 1
+	check(devd > 0, "busy stations develop (%d)" % devd)
+	cs.net.lines[clid]["age"] = 200
+	var ex0 := cs.net.line_annual_opex(cs.net.lines[clid])
+	check(cs.modernize(clid) and cs.net.line_annual_opex(cs.net.lines[clid]) < ex0, "modernising resets ageing costs")
+	# ---- new cities
+	for cid2 in ["eskisehir", "antalya", "bursa", "trabzon"]:
+		var nc := GameState.new(cid2)
+		var zs: Array = nc.city.zones.filter(func(z): return z["pop"] > 0)
+		zs.sort_custom(func(a, b): return a["pop"] > b["pop"])
+		var a2: Vector2 = zs[0]["pos"]
+		var b2: Vector2 = zs[1]["pos"]
+		var nodes2: Array = [{"pos": a2, "sid": -1}, {"pos": a2.lerp(b2, 0.5), "sid": -1}, {"pos": b2, "sid": -1}]
+		var ev2 := nc.net.evaluate_draft("tram", false, nodes2)
+		if not ev2["ok"]:
+			ev2 = nc.net.evaluate_draft("metro", false, nodes2)
+			nc.net.commit_draft("metro", false, nodes2, ev2["cost"], -1, false, ev2["vehicles"])
+		else:
+			nc.net.commit_draft("tram", false, nodes2, ev2["cost"], -1, false, ev2["vehicles"])
+		nc.recompute_if_dirty()
+		print("    %s: %.1fx%.1f km, %d zones, first line riders %.0f (%s)" % [cid2, nc.city.size_km.x, nc.city.size_km.y, nc.city.zones.size(), nc.target_riders, ev2["reason"]])
+		check(ev2["ok"] and nc.target_riders > 1000.0, cid2 + " playable")
+	var bg := GameState.new("bursa")
+	var gev := bg.net.evaluate_segment("gondola", false, bg.city.project(29.062, 40.184), bg.city.project(29.125, 40.11))
+	check(gev["ok"], "Bursa gondola up Uludağ allowed: " + gev["reason"])
+	# ---- scenarios & weekly
+	for scd in ScenarioData.LIST:
+		var ss := ScenarioData.create(scd["id"])
+		check(ss.goals().size() >= 2 and ss.year == int(scd["start_year"]), "scenario " + scd["id"])
+	var ws := ScenarioData.create_weekly()
+	check(ws.slot() == "weekly" and ws.scenario["mods"].size() == 2, "weekly challenge %s %s" % [ws.city_id, str(ws.scenario["mods"])])
+	var won := [false]
+	var sc1 := ScenarioData.create("ank_campus")
+	sc1.scenario_finished.connect(func(ok, _s, _sc): won[0] = not ok)
+	for i in 50:
+		sc1._end_month()
+	check(won[0], "scenario fails after its deadline")
+	var code := SaveManager.export_code()
+	check(code.begins_with("RAYA1:") and SaveManager.import_code(code), "save export/import round trip")
 	# seasonal modifiers
 	var a_st := GameState.new("ankara")
 	a_st.month = 0

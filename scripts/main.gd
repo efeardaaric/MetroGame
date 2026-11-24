@@ -17,6 +17,7 @@ func _ready() -> void:
 	get_tree().set_quit_on_go_back(false)
 	RenderingServer.set_default_clear_color(Palette.BG)
 	get_tree().root.size_changed.connect(_update_content_scale)
+	Settings.changed.connect(_update_content_scale)
 	_update_content_scale()
 	fade_layer = CanvasLayer.new()
 	fade_layer.layer = 100
@@ -41,7 +42,9 @@ func _update_content_scale() -> void:
 	var s := win.size
 	if s.x <= 0 or s.y <= 0:
 		return
-	var target := Vector2i(1280, 720) if s.x > s.y else Vector2i(720, 1280)
+	var ts := Settings.text_scale
+	var base := Vector2(1280, 720) if s.x > s.y else Vector2(720, 1280)
+	var target := Vector2i(base / ts)
 	if win.content_scale_size != target:
 		win.content_scale_size = target
 
@@ -55,7 +58,13 @@ func _show_menu() -> void:
 ## `id` is a save slot: a city id, optionally suffixed with "_sandbox".
 func _show_game(id: String, fresh: bool) -> void:
 	var st: GameState
-	if fresh:
+	if fresh and id.begins_with("scn_"):
+		SaveManager.delete_save(id)
+		st = ScenarioData.create(id.trim_prefix("scn_"))
+	elif fresh and id == "weekly":
+		SaveManager.delete_save(id)
+		st = ScenarioData.create_weekly()
+	elif fresh:
 		SaveManager.delete_save(id)
 		st = GameState.new(id.trim_suffix("_sandbox"))
 		st.sandbox = id.ends_with("_sandbox")

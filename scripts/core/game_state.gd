@@ -10,6 +10,9 @@ signal ridership_updated
 signal bankrupt
 signal event_started(event_id: String)
 signal tech_completed(tech_id: String)
+signal construction_done(lid: int)
+signal scenario_finished(success: bool, stars: int, score: float)
+signal construction_overrun(lid: int, months: int)
 
 const START_YEAR := 2026
 const FARE := 10.0            # ₺ per linked trip
@@ -24,6 +27,10 @@ var demand: DemandModel
 
 var cash := 0.0
 var year := START_YEAR
+var start_year := START_YEAR
+var scenario := {}            # scenario / weekly challenge definition (empty for the campaign)
+var grant_mult := 1.0
+var scenario_done := false
 var month := 0              # 0..11
 var month_progress := 0.0
 var riders := 0.0           # current daily riders (ramping)
@@ -105,11 +112,44 @@ func has_event(eid: String) -> bool:
 
 ## Save slot name: sandbox games live in their own slot.
 func slot() -> String:
+	if scenario.get("kind", "") == "weekly":
+		return "weekly"
+	if scenario.get("kind", "") == "scenario":
+		return "scn_" + str(scenario["id"])
 	return city_id + ("_sandbox" if sandbox else "")
 
 
+func is_campaign() -> bool:
+	return scenario.is_empty() and not sandbox
+
+
+func allowed_modes() -> Array:
+	return scenario.get("allowed", TransitModes.ORDER)
+
+
+func _check_scenario() -> void:
+	if scenario.is_empty() or scenario_done:
+		return
+	var deadline_reached := float(year - start_year) + month / 12.0 >= float(scenario.get("years", 99))
+	if scenario.get("kind", "") == "weekly":
+		if deadline_reached:
+			scenario_done = true
+			scenario_finished.emit(true, 0, best_riders)
+		return
+	var all_done := true
+	for g in goals():
+		if not completed_goals.has(g["id"]):
+			all_done = false
+	if all_done:
+		scenario_done = true
+		scenario_finished.emit(true, ScenarioData.stars_for(self), best_riders)
+	elif deadline_reached:
+		scenario_done = true
+		scenario_finished.emit(false, 0, best_riders)
+
+
 func years_elapsed() -> float:
-	return (year - START_YEAR) + month / 12.0
+	return (year - start_year) + month / 12.0
 
 
 func spend(amount: float) -> bool:
@@ -152,6 +192,8 @@ func recompute_if_dirty() -> void:
 		snap_net.tech = researched.duplicate()
 		_pending = DemandModel.new(city, snap_net)
 		_pending.mods = demand.mods.duplicate(true)
+		_pending.zones = city.zones.duplicate(true)
+		_pending.zones_snapshot = true
 		var job := _pending
 		_task_id = WorkerThreadPool.add_task(func(): job.compute(), false, "demand")
 		return
@@ -194,7 +236,7 @@ func flush_demand() -> void:
 func monthly_grant() -> float:
 	var opinion := demand.satisfaction * 0.7 + feed.approval * 0.3
 	var sat_mult := lerpf(0.75, 1.2, opinion / 100.0)
-	return city.data["annual_grant"] * sat_mult / 12.0
+	return city.data["annual_grant"] * grant_mult * sat_mult / 12.0
 
 
 func monthly_income() -> float:
@@ -250,8 +292,171 @@ func _end_month() -> void:
 		_end_year()
 	_tick_events()
 	_tick_research()
+	_tick_construction()
+	_check_scenario()
 	mgmt.monthly(self)
 	feed.monthly(self)
+
+
+# ---------------------------------------------------------------- construction
+
+const BUILD_MONTHS_KM := {"metro": 0.55, "tram": 0.28, "metrobus": 0.14, "rail": 0.3, "funicular": 1.4, "gondola": 0.5, "ferry": 0.0}
+
+
+static func build_months(mode: String, deep: bool, length_km: float, new_stations: int) -> int:
+	var per: float = BUILD_MONTHS_KM.get(mode, 0.3) * (1.5 if deep else 1.0)
+	var m := length_km * per + new_stations * (0.35 if mode == "metro" else 0.15) + 1.0
+	if mode == "ferry":
+		m = 1.0 + new_stations * 0.5
+	return clampi(int(ceil(m)), 1, 30)
+
+
+## Puts a freshly committed line (or extension) under construction.
+func start_construction(lid: int, months: int, prev_count: int, at_start: bool, cost: float) -> void:
+	if not net.lines.has(lid):
+		return
+	var l: Dictionary = net.lines[lid]
+	var n: int = l["stations"].size()
+	var lo := -1
+	var hi := -1
+	if prev_count > 0:
+		var added := n - prev_count
+		if l.get("loop", false):
+			added = maxi(0, added)
+		lo = added if at_start else 0
+		hi = n - 1 if at_start else prev_count - 1
+		if l.get("loop", false):
+			lo = 0
+			hi = prev_count - 1
+	if sandbox:
+		months = maxi(1, months / 3)
+	l["con"] = {"months": months, "total": months, "lo": lo, "hi": hi, "cost": cost, "overrun": false, "rushed": false}
+	dirty = true
+	net.changed.emit()
+
+
+func rush_cost(lid: int) -> float:
+	var c: Dictionary = net.lines[lid]["con"]
+	return roundf(float(c["cost"]) * 0.3)
+
+
+## Pays extra to halve the remaining construction time (once per project).
+func rush_construction(lid: int) -> bool:
+	if not net.lines.has(lid) or not net.lines[lid].has("con"):
+		return false
+	var c: Dictionary = net.lines[lid]["con"]
+	if c.get("rushed", false) or int(c["months"]) <= 1:
+		return false
+	if not spend(rush_cost(lid)):
+		return false
+	c["months"] = maxi(1, int(ceil(int(c["months"]) / 2.0)))
+	c["rushed"] = true
+	return true
+
+
+func _tick_construction() -> void:
+	for l in net.lines.values():
+		if not l.has("con"):
+			continue
+		var c: Dictionary = l["con"]
+		c["months"] = int(c["months"]) - 1
+		if int(c["months"]) <= 0:
+			# one-off cost overrun check right before opening
+			if not c.get("overrun", false) and int(c["total"]) >= 3 and _ev_rng.randf() < 0.22:
+				c["overrun"] = true
+				var extra := roundf(float(c["cost"]) * _ev_rng.randf_range(0.08, 0.22))
+				var delay := 1 + _ev_rng.randi() % 3
+				c["months"] = delay
+				if not sandbox:
+					cash -= extra
+					year_capex += extra
+				cash_changed.emit()
+				feed.post("con_overrun", {"line": l["name"], "n": delay}, self, "news", 1.4)
+				construction_overrun.emit(l["id"], delay)
+				continue
+			l.erase("con")
+			dirty = true
+			net.changed.emit()
+			construction_done.emit(l["id"])
+
+
+# ---------------------------------------------------------------- assets
+
+func modernize_cost(lid: int) -> float:
+	var l: Dictionary = net.lines[lid]
+	var m := TransitModes.get_mode(l["mode"])
+	return roundf(float(l.get("built_cost", 0.0)) * 0.12 + float(l["vehicles"]) * m["vehicle_cost"] * 0.35)
+
+
+func modernize(lid: int) -> bool:
+	if not net.lines.has(lid) or not spend(modernize_cost(lid)):
+		return false
+	net.lines[lid]["age"] = 0
+	net.lines[lid]["modern"] = true
+	feed.post("modernized", {"line": net.lines[lid]["name"]}, self, "citizen", 1.3)
+	feed.bump(2.0)
+	dirty = true
+	return true
+
+
+func hub_cost() -> float:
+	return roundf(float(city.data["annual_grant"]) * 0.09 / 10.0) * 10.0
+
+
+func upgrade_hub(sid: int) -> bool:
+	if not net.stations.has(sid) or net.stations[sid].get("hub", 0) > 0:
+		return false
+	if not spend(hub_cost()):
+		return false
+	net.stations[sid]["hub"] = 1
+	_sync_hub_zones()
+	feed.post("hub_open", {"station": net.station_display_name(sid)}, self, "citizen", 1.3)
+	net.changed.emit()
+	dirty = true
+	return true
+
+
+## Interchange hubs attract shops and offices: modelled as small job centres.
+func _sync_hub_zones() -> void:
+	for sid in net.stations.keys():
+		var s: Dictionary = net.stations[sid]
+		if s.get("hub", 0) > 0:
+			city.ensure_dynamic_zone("hub_%d" % sid, s["pos"], 45.0)
+	var keep := {}
+	for sid in net.stations.keys():
+		if net.stations[sid].get("hub", 0) > 0:
+			keep["hub_%d" % sid] = true
+	city.prune_dynamic_zones("hub_", keep)
+
+
+## Transit-oriented development: busy stations grow their neighbourhoods every year.
+func _recompute_tod() -> void:
+	for z in city.zones:
+		if z["poi_id"] != "":
+			continue
+		var t := 0.0
+		for s in net.stations.values():
+			if s["pos"].distance_to(z["pos"]) <= float(z["r"]) + 0.8:
+				t += float(s.get("dev", 0.0)) * 0.05
+		z["tod"] = 1.0 + minf(0.4, t)
+	city.grow(years_elapsed())
+
+
+func _develop_stations() -> void:
+	for s in net.stations.values():
+		if not net.station_operational(s["id"]):
+			continue
+		var b: float = demand.station_boardings.get(s["id"], 0.0)
+		if b > 1500.0:
+			s["dev"] = minf(1.0, float(s.get("dev", 0.0)) + 0.1 + b / 250000.0)
+	for z in city.zones:
+		if z["poi_id"] != "":
+			continue
+		var t := 0.0
+		for s in net.stations.values():
+			if s["pos"].distance_to(z["pos"]) <= float(z["r"]) + 0.8:
+				t += float(s.get("dev", 0.0)) * 0.05
+		z["tod"] = 1.0 + minf(0.4, t)
 
 
 # ---------------------------------------------------------------- research
@@ -350,6 +555,7 @@ func _end_year() -> void:
 	year_income = 0.0
 	year_expense = 0.0
 	year_capex = 0.0
+	_develop_stations()
 	city.grow(years_elapsed())
 	dirty = true
 	check_goals()
@@ -359,6 +565,8 @@ func _end_year() -> void:
 # ---------------------------------------------------------------- goals
 
 func goals() -> Array:
+	if not scenario.is_empty():
+		return scenario.get("objectives", [])
 	return city.data["goals"]
 
 
@@ -393,7 +601,7 @@ func _poi_served(pid: String) -> bool:
 	for poi in city.pois:
 		if poi["id"] == pid:
 			for s in net.stations.values():
-				if s["lines"].size() > 0 and s["pos"].distance_to(poi["pos"]) <= 1.0:
+				if s["lines"].size() > 0 and s["pos"].distance_to(poi["pos"]) <= 1.0 and net.station_operational(s["id"]):
 					return true
 	return false
 
@@ -462,13 +670,18 @@ func to_dict() -> Dictionary:
 		"best_riders": best_riders, "game_over": game_over, "tutorial_step": tutorial_step,
 		"total_built": total_built, "network": net.to_dict(),
 		"feed": feed.to_dict(), "events": active_events,
-		"mgmt": mgmt.to_dict(), "researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
+		"mgmt": mgmt.to_dict(), "start_year": start_year, "scenario": scenario, "grant_mult": grant_mult,
+		"scenario_done": scenario_done, "researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
 	}
 
 
 func from_dict(d: Dictionary) -> void:
 	cash = d.get("cash", cash)
 	year = int(d.get("year", START_YEAR))
+	start_year = int(d.get("start_year", START_YEAR))
+	scenario = d.get("scenario", {})
+	grant_mult = d.get("grant_mult", 1.0)
+	scenario_done = d.get("scenario_done", false)
 	month = int(d.get("month", 0))
 	month_progress = d.get("month_progress", 0.0)
 	riders = d.get("riders", 0.0)
@@ -486,6 +699,10 @@ func from_dict(d: Dictionary) -> void:
 	total_built = d.get("total_built", 0.0)
 	city.grow(years_elapsed())
 	net.from_dict(d.get("network", {}))
+	_sync_hub_zones()
+	for z in city.zones:
+		z["tod"] = 1.0
+	_recompute_tod()
 	feed.from_dict(d.get("feed", {}))
 	mgmt.from_dict(d.get("mgmt", {}))
 	researched.clear()

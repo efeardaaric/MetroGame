@@ -131,15 +131,31 @@ func _build_menu() -> void:
 	menu_box.add_child(UI.gap(8 if land else 30))
 	var last := SaveManager.last_city()
 	if last != "":
-		var cname := I18n.t(CityData.get_city(last.trim_suffix("_sandbox"))["name_key"])
-		if last.ends_with("_sandbox"):
-			cname += " (" + I18n.t("sandbox") + ")"
+		var cname: String
+		if last == "weekly":
+			cname = I18n.t("weekly_title")
+		elif last.begins_with("scn_"):
+			cname = I18n.t(last)
+		else:
+			cname = I18n.t(CityData.get_city(last.trim_suffix("_sandbox"))["name_key"])
+			if last.ends_with("_sandbox"):
+				cname += " (" + I18n.t("sandbox") + ")"
 		var cont := Deco.ticket_button("%s · %s" % [I18n.t("continue"), cname], "play", Palette.STRIPES[0], 100)
 		cont.pressed.connect(func(): start_city.emit(last, false))
 		menu_box.add_child(cont)
 	var play := Deco.ticket_button(I18n.t("play"), "build" if last != "" else "play", Palette.STRIPES[1] if last != "" else Palette.STRIPES[0], 100)
 	play.pressed.connect(open_city_select)
 	menu_box.add_child(play)
+	var mrow := UI.hbox(14)
+	var scn := Deco.ticket_button(I18n.t("scenarios"), "flask", Palette.STRIPES[1], 84)
+	scn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	scn.pressed.connect(open_scenarios)
+	mrow.add_child(scn)
+	var wk := Deco.ticket_button(I18n.t("weekly_short"), "calendar", Palette.STRIPES[3], 84)
+	wk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	wk.pressed.connect(open_weekly)
+	mrow.add_child(wk)
+	menu_box.add_child(mrow)
 	var row := UI.hbox(14)
 	var htp := Deco.ticket_button(I18n.t("how_to_play"), "info", Palette.STRIPES[2], 84)
 	htp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
@@ -170,6 +186,93 @@ func on_back() -> void:
 		menu_box.visible = true
 	else:
 		get_tree().quit()
+
+
+func open_scenarios() -> void:
+	var m := Modal.create(I18n.t("scenarios"), 760.0)
+	var sc := ScrollContainer.new()
+	sc.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc.custom_minimum_size.y = minf(1000.0, root.get_viewport_rect().size.y * 0.66)
+	var v := UI.vbox(14)
+	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc.add_child(v)
+	for scd in ScenarioData.LIST:
+		var id: String = scd["id"]
+		var card := PanelContainer.new()
+		var csb := ThemeBuilder.box(Palette.PANEL_2, 22, 3, CityData.get_city(scd["city"])["accent"], 18, 14)
+		csb.border_width_left = 12
+		card.add_theme_stylebox_override("panel", csb)
+		var cv := UI.vbox(8)
+		var top := UI.hbox(10)
+		var t := UI.title(I18n.t("scn_" + id), 30)
+		t.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		top.add_child(t)
+		var stars := SaveManager.scenario_stars(id)
+		for i in 3:
+			top.add_child(Icon.make("star" if i < stars else "star_o", 28, Palette.ACCENT if i < stars else Palette.FAINT))
+		cv.add_child(top)
+		cv.add_child(UI.label("%s · %d · %d %s" % [I18n.t(CityData.get_city(scd["city"])["name_key"]), int(scd["start_year"]), int(scd["years"]), I18n.t("year")], 20, Palette.ACCENT, 800))
+		cv.add_child(UI.wrap_label(I18n.t("scn_" + id + "_d"), 21, Palette.MUTED))
+		var slot := "scn_" + id
+		var row := UI.hbox(10)
+		var play := UI.button(I18n.t("continue") if SaveManager.has_save(slot) else I18n.t("play"), "AccentButton", "play", 64)
+		play.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		play.pressed.connect(func():
+			m.close()
+			start_city.emit(slot, not SaveManager.has_save(slot))
+		)
+		row.add_child(play)
+		if SaveManager.has_save(slot):
+			var fresh := UI.icon_button("undo", 64)
+			fresh.pressed.connect(func():
+				m.close()
+				start_city.emit(slot, true)
+			)
+			row.add_child(fresh)
+		cv.add_child(row)
+		card.add_child(cv)
+		v.add_child(card)
+	m.body.add_child(sc)
+	var ok := UI.button(I18n.t("close"))
+	ok.pressed.connect(m.close)
+	m.body.add_child(ok)
+	ui_layer.add_child(m)
+
+
+func open_weekly() -> void:
+	var key := ScenarioData.week_key()
+	var spec := ScenarioData.weekly_spec(key)
+	var m := Modal.create(I18n.t("weekly_title"), 640.0)
+	m.body.add_child(UI.plate("%s · #%d" % [I18n.t(CityData.get_city(spec["city"])["name_key"]), key % 100], CityData.get_city(spec["city"])["accent"]))
+	m.body.add_child(UI.wrap_label(I18n.t("weekly_desc"), 23, Palette.MUTED))
+	for k in spec["mods"]:
+		var r := UI.hbox(10)
+		r.add_child(Icon.make("warning", 30, Palette.WARN))
+		var l := UI.wrap_label(I18n.t("wmod_" + str(k)), 23, Palette.TEXT)
+		l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		r.add_child(l)
+		m.body.add_child(r)
+	var best := SaveManager.weekly_best(key)
+	if best > 0.0:
+		m.body.add_child(UI.stat_row(I18n.t("best"), Geo.fmt_int(best), Palette.ACCENT))
+	var has := SaveManager.has_save("weekly")
+	var play := UI.button(I18n.t("continue") if has else I18n.t("play"), "AccentButton", "play")
+	play.pressed.connect(func():
+		m.close()
+		var cont := has and _weekly_save_matches(key)
+		start_city.emit("weekly", not cont)
+	)
+	m.body.add_child(play)
+	ui_layer.add_child(m)
+
+
+func _weekly_save_matches(key: int) -> bool:
+	var f := FileAccess.open(SaveManager.save_path("weekly"), FileAccess.READ)
+	if f == null:
+		return false
+	var d = JSON.parse_string(f.get_as_text())
+	return d is Dictionary and int(d.get("scenario", {}).get("week", 0)) == key
 
 
 func _show_help() -> void:

@@ -387,12 +387,29 @@ func nearest_poi(p: Vector2, max_d: float) -> Dictionary:
 	return best
 
 
-## Annual growth of population and jobs.
+## Annual growth of population and jobs (plus transit-oriented development "tod").
 func grow(years: float) -> void:
 	for z in zones:
 		var g := pow(1.016, years)
-		z["pop"] = z["base_pop"] * g
-		z["jobs"] = z["base_jobs"] * pow(1.02, years)
+		var tod: float = z.get("tod", 1.0)
+		z["pop"] = z["base_pop"] * g * tod
+		z["jobs"] = z["base_jobs"] * pow(1.02, years) * (1.0 + (tod - 1.0) * 1.3)
+
+
+## Adds (once) a small job centre at runtime, e.g. around an interchange hub.
+func ensure_dynamic_zone(tag: String, pos: Vector2, jobs: float) -> void:
+	for z in zones:
+		if z["poi_id"] == tag:
+			return
+	var rng := RandomNumberGenerator.new()
+	rng.seed = hash(tag)
+	var zz := _make_zone(tag, pos, 0.0, jobs, 0.5, tag, rng)
+	zz["kind"] = "business"
+	zones.append(zz)
+
+
+func prune_dynamic_zones(prefix: String, keep: Dictionary) -> void:
+	zones = zones.filter(func(z): return not (str(z["poi_id"]).begins_with(prefix) and not keep.has(z["poi_id"])))
 
 
 ## Builds a heat-map image (RGBA8). kind: "pop" or "jobs".

@@ -32,7 +32,7 @@ static func icon_of(id: String) -> String:
 ## Evaluates all conditions; returns ids unlocked now. `flags` carries one-off events
 ## (e.g. {"archaeology": true, "viral": true}).
 static func check(st: GameState, flags: Dictionary = {}) -> Array:
-	if st.sandbox:
+	if not st.is_campaign():
 		return []
 	var got: Array = []
 	var net := st.net
@@ -78,6 +78,7 @@ static func check(st: GameState, flags: Dictionary = {}) -> Array:
 		if conds[id] and not u.has(id):
 			u[id] = "%d-%02d" % [st.year, st.month + 1]
 			got.append(id)
+			Platform.unlock_achievement(id)
 	if not got.is_empty():
 		SaveManager.save_progress()
 	return got

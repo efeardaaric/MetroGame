@@ -60,11 +60,78 @@ func line_length(line: Dictionary) -> float:
 
 
 ## Round-trip time in minutes.
+const EXPRESS_MODES := ["metro", "rail", "metrobus", "tram"]
+
+
+## Operational station index range [lo, hi] (construction may limit it). lo = -1: not running.
+func active_range(line: Dictionary) -> Vector2i:
+	var n: int = line["stations"].size()
+	if line.has("con"):
+		return Vector2i(int(line["con"]["lo"]), int(line["con"]["hi"]))
+	return Vector2i(0, n - 1)
+
+
+func is_operational(line: Dictionary) -> bool:
+	return active_range(line).x >= 0 and active_range(line).y > active_range(line).x
+
+
+func can_express(line: Dictionary) -> bool:
+	return EXPRESS_MODES.has(line["mode"]) and not line.get("loop", false) and line["stations"].size() >= 5
+
+
+## Which stations trains stop at (express skips every other minor stop).
+func stop_mask(line: Dictionary) -> Array:
+	var st: Array = line["stations"]
+	var r := active_range(line)
+	var express: bool = line.get("express", false) and can_express(line)
+	var out: Array = []
+	for i in st.size():
+		var ok := i >= r.x and i <= r.y
+		if ok and express and i != r.x and i != r.y:
+			var hub: bool = stations[st[i]]["lines"].size() > 1 or stations[st[i]].get("hub", 0) > 0
+			ok = hub or (i - r.x) % 2 == 0
+		out.append(ok)
+	if line.get("loop", false) and r.x == 0 and r.y == st.size() - 1:
+		return out
+	return out
+
+
+func station_operational(sid: int) -> bool:
+	if not stations.has(sid):
+		return false
+	for lid in stations[sid]["lines"]:
+		var l: Dictionary = lines[lid]
+		var i: int = l["stations"].find(sid)
+		var r := active_range(l)
+		if i >= r.x and i <= r.y and r.x >= 0:
+			return true
+	return false
+
+
+func _active_length(line: Dictionary) -> float:
+	var r := active_range(line)
+	if r.x < 0:
+		return 0.0
+	var st: Array = line["stations"]
+	var l := 0.0
+	for i in range(r.x, r.y):
+		l += stations[st[i]]["pos"].distance_to(stations[st[i + 1]]["pos"])
+	if line.get("loop", false) and r.x == 0 and r.y == st.size() - 1:
+		l += stations[st[st.size() - 1]]["pos"].distance_to(stations[st[0]]["pos"])
+	return l
+
+
 func line_cycle_min(line: Dictionary) -> float:
 	var m := TransitModes.get_mode(line["mode"])
-	var length := line_length(line)
-	var n_st: int = line["stations"].size()
-	var one_way: float = length / m["speed"] * 60.0 + n_st * m["dwell_min"]
+	var length := _active_length(line) if line.has("con") and int(line["con"]["lo"]) >= 0 else line_length(line)
+	var n_st := 0
+	for b in stop_mask(line):
+		if b:
+			n_st += 1
+	if n_st == 0:
+		n_st = line["stations"].size()
+	var spd: float = m["speed"] * (1.15 if line.get("express", false) and can_express(line) else 1.0)
+	var one_way: float = length / spd * 60.0 + n_st * m["dwell_min"]
 	if line.get("loop", false):
 		return max(one_way, 4.0)
 	return max(one_way * 2.0 + 4.0, 6.0) # +turnaround
@@ -95,7 +162,8 @@ func depot_expand_cost(line: Dictionary) -> float:
 
 func line_annual_opex(line: Dictionary) -> float:
 	var m := TransitModes.get_mode(line["mode"])
-	return line["vehicles"] * m["vehicle_opex"] * TechData.mode_mult(tech, "opex", line["mode"]) + line_length(line) * m["km_opex"] + line["stations"].size() * 0.4
+	var aging := 1.0 + float(line.get("age", 0)) / 240.0
+	return (line["vehicles"] * m["vehicle_opex"] * TechData.mode_mult(tech, "opex", line["mode"]) + line_length(line) * m["km_opex"] + line["stations"].size() * 0.4) * aging
 
 
 func total_annual_opex() -> float:
@@ -203,7 +271,7 @@ func evaluate_segment(mode: String, deep: bool, a: Vector2, b: Vector2) -> Dicti
 				res["reason"] = I18n.t("err_ferry_land")
 				return res
 	# grade check for surface modes
-	if not m["underground"] and mode != "ferry":
+	if not m["underground"] and mode != "ferry" and mode != "gondola":
 		var ea := city.elevation(a)
 		var eb := city.elevation(b)
 		var grade: float = abs(eb - ea) / max(1.0, length * 1000.0)
@@ -214,7 +282,7 @@ func evaluate_segment(mode: String, deep: bool, a: Vector2, b: Vector2) -> Dicti
 			return res
 		# hills cost extra for surface works
 		cost *= 1.0 + grade * 4.0
-	if mode == "funicular" and length > m["max_length"]:
+	if mode in ["funicular", "gondola"] and length > m["max_length"]:
 		res["ok"] = false
 		res["reason"] = I18n.t("err_funicular_len") % [m["max_length"]]
 		return res
@@ -449,7 +517,7 @@ func line_end_at(sid: int, mode: String) -> Dictionary:
 func to_dict() -> Dictionary:
 	var st: Array = []
 	for s in stations.values():
-		st.append({"id": s["id"], "x": s["pos"].x, "y": s["pos"].y, "name": s["name"]})
+		st.append({"id": s["id"], "x": s["pos"].x, "y": s["pos"].y, "name": s["name"], "hub": s.get("hub", 0), "dev": s.get("dev", 0.0)})
 	var ln: Array = []
 	for l in lines.values():
 		ln.append(l.duplicate(true))
@@ -461,7 +529,8 @@ func from_dict(d: Dictionary) -> void:
 	lines.clear()
 	for s in d.get("stations", []):
 		var sid := int(s["id"])
-		stations[sid] = {"id": sid, "pos": Vector2(s["x"], s["y"]), "name": s["name"], "lines": []}
+		stations[sid] = {"id": sid, "pos": Vector2(s["x"], s["y"]), "name": s["name"], "lines": [],
+			"hub": int(s.get("hub", 0)), "dev": float(s.get("dev", 0.0))}
 	for l in d.get("lines", []):
 		var line: Dictionary = l.duplicate(true)
 		line["id"] = int(line["id"])

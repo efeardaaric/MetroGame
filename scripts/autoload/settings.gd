@@ -11,7 +11,9 @@ var ambience_volume := 0.7
 var haptics := true
 var language := ""
 var show_fps := false
-var colorblind_patterns := false
+var colorblind := false
+var text_scale := 1.0
+var reduce_motion := false
 var high_quality := true
 var day_night := true
 
@@ -36,6 +38,9 @@ func load_settings() -> void:
 	show_fps = cf.get_value("general", "show_fps", show_fps)
 	high_quality = cf.get_value("general", "high_quality", high_quality)
 	day_night = cf.get_value("general", "day_night", day_night)
+	colorblind = cf.get_value("access", "colorblind", colorblind)
+	text_scale = cf.get_value("access", "text_scale", text_scale)
+	reduce_motion = cf.get_value("access", "reduce_motion", reduce_motion)
 
 
 func save_settings() -> void:
@@ -48,6 +53,9 @@ func save_settings() -> void:
 	cf.set_value("general", "show_fps", show_fps)
 	cf.set_value("general", "high_quality", high_quality)
 	cf.set_value("general", "day_night", day_night)
+	cf.set_value("access", "colorblind", colorblind)
+	cf.set_value("access", "text_scale", text_scale)
+	cf.set_value("access", "reduce_motion", reduce_motion)
 	cf.save(PATH)
 	changed.emit()
 

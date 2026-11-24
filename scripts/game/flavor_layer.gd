@@ -71,6 +71,14 @@ func setup(c: CityMap) -> void:
 	queue_redraw()
 
 
+var detail := true
+
+
+func set_detail(on: bool) -> void:
+	detail = on
+	_bird_node.visible = on
+
+
 func set_zoom(z: float) -> void:
 	if absf(z - zoom) / maxf(zoom, 0.001) > 0.02:
 		queue_redraw()

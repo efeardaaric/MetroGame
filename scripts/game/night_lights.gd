@@ -65,6 +65,14 @@ func setup(c: CityMap, n: TransitNetwork, v: VehicleLayer) -> void:
 	modulate.a = 0.0
 
 
+var detail := true
+
+
+func set_detail(on: bool) -> void:
+	detail = on
+	_static.queue_redraw()
+
+
 func set_zoom(z: float) -> void:
 	if absf(z - zoom) / zoom > 0.05:
 		zoom = z
@@ -80,7 +88,7 @@ func _draw_static(ci: CanvasItem) -> void:
 		return
 	var inv := 1.0 / clampf(zoom, 0.05, 2.0)
 	var warm := Color(1.0, 0.68, 0.3, 0.2)
-	for z in city.zones:
+	for z in (city.zones if detail else []):
 		if z["pop"] <= 0 and z["poi_id"] == "":
 			continue
 		var dens: float = clampf(sqrt(z["pop"] + z["jobs"]) / 28.0, 0.25, 1.0)

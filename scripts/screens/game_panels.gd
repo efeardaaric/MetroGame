@@ -25,7 +25,8 @@ func build_sheet() -> Sheet:
 	grid.add_theme_constant_override("v_separation", 14)
 	grid.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	for mode in TransitModes.ORDER:
-		grid.add_child(_mode_card(mode))
+		if _st().allowed_modes().has(mode):
+			grid.add_child(_mode_card(mode))
 	s.body.add_child(grid)
 	return s
 
@@ -172,6 +173,8 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 	var last := st.net.station_display_name(l["stations"][l["stations"].size() - 1])
 	var route := UI.wrap_label("%s ⟷ %s" % [first, last], 24, Palette.MUTED)
 	content.add_child(route)
+	if l.has("con"):
+		content.add_child(_construction_card(lid))
 	var load: float = st.demand.line_load.get(lid, 0.0)
 	var riders: float = st.demand.line_riders.get(lid, 0.0)
 	var grid := GridContainer.new()
@@ -268,6 +271,45 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 	vv.add_child(dh)
 	vcard.add_child(vv)
 	content.add_child(vcard)
+
+	# service pattern & fleet age
+	var svc := UI.card()
+	var sv := UI.vbox(10)
+	if st.net.can_express(l):
+		var er := UI.hbox(10)
+		var ev2 := UI.vbox(2)
+		ev2.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		ev2.add_child(UI.label(I18n.t("express"), 24, Palette.TEXT, 850))
+		ev2.add_child(UI.wrap_label(I18n.t("express_hint"), 19, Palette.FAINT))
+		er.add_child(ev2)
+		var ecb := CheckButton.new()
+		ecb.button_pressed = l.get("express", false)
+		ecb.focus_mode = Control.FOCUS_NONE
+		ecb.toggled.connect(func(on: bool):
+			l["express"] = on
+			st.net.changed.emit()
+			st.feed.post("express", {"line": l["name"]}, st)
+			_after_line_change(content, lid)
+		)
+		er.add_child(ecb)
+		sv.add_child(er)
+	var age_y := float(l.get("age", 0)) / 12.0
+	sv.add_child(UI.stat_row(I18n.t("fleet_age"), "%.1f %s" % [age_y, I18n.t("year")], Palette.WARN if age_y > 10 else Palette.TEXT))
+	if age_y >= 3.0:
+		var mc := st.modernize_cost(lid)
+		var mb := UI.button(I18n.t("modernize") % Geo.fmt_money(mc), "", "gear", 64)
+		mb.add_theme_font_size_override("font_size", 21)
+		mb.disabled = not st.can_afford(mc)
+		mb.pressed.connect(func():
+			if st.modernize(lid):
+				Audio.play("build")
+				gs.toast.show_msg(I18n.t("modernized_toast") % l["name"], "good")
+				_after_line_change(content, lid)
+		)
+		sv.add_child(mb)
+	sv.add_child(UI.wrap_label(I18n.t("age_hint"), 19, Palette.FAINT))
+	svc.add_child(sv)
+	content.add_child(svc)
 
 	# colour picker
 	var ch := HFlowContainer.new()
@@ -393,6 +435,24 @@ func station_sheet(sid: int) -> Sheet:
 	sh.body.add_child(grid)
 	if s["lines"].size() > 1:
 		sh.body.add_child(UI.label("⇄ " + I18n.t("transfer"), 24, Palette.GOOD, 850))
+	var dev: float = s.get("dev", 0.0)
+	if dev > 0.0:
+		sh.body.add_child(UI.stat_row(I18n.t("development"), "%d%%" % int(dev * 100.0), Palette.GOOD))
+	if s.get("hub", 0) > 0:
+		sh.body.add_child(UI.plate(I18n.t("hub_active"), Palette.ACCENT))
+	elif s["lines"].size() >= 2:
+		var hc := st.hub_cost()
+		var hb := UI.button(I18n.t("upgrade_hub") % Geo.fmt_money(hc), "AccentButton", "star", 72)
+		hb.disabled = not st.can_afford(hc)
+		hb.pressed.connect(func():
+			if st.upgrade_hub(sid):
+				Audio.play("build")
+				gs.confetti.burst(50)
+				gs.toast.show_msg(I18n.t("hub_done"), "good")
+				sh.close()
+		)
+		sh.body.add_child(hb)
+		sh.body.add_child(UI.wrap_label(I18n.t("hub_hint"), 19, Palette.FAINT))
 	var rn := UI.button(I18n.t("rename_station"), "", "build", 64)
 	rn.pressed.connect(func(): gs.show_modal(rename_modal(sid)))
 	sh.body.add_child(rn)
@@ -706,7 +766,93 @@ func layers_sheet() -> Sheet:
 		)
 		grid.add_child(b)
 	s.body.add_child(grid)
+	var dr := UI.hbox(10)
+	var dl := UI.vbox(2)
+	dl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	dl.add_child(UI.label(I18n.t("diagram_mode"), 25, Palette.TEXT, 850))
+	dl.add_child(UI.wrap_label(I18n.t("diagram_hint"), 19, Palette.FAINT))
+	dr.add_child(dl)
+	var dcb := CheckButton.new()
+	dcb.button_pressed = gs.world.network.diagram
+	dcb.focus_mode = Control.FOCUS_NONE
+	dcb.toggled.connect(func(on: bool):
+		gs.world.set_diagram(on)
+		Audio.play("swoosh")
+	)
+	dr.add_child(dcb)
+	s.body.add_child(dr)
 	return s
+
+
+func _construction_card(lid: int) -> Control:
+	var st := _st()
+	var l: Dictionary = st.net.lines[lid]
+	var c: Dictionary = l["con"]
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.box(Color("2f2a1a"), 20, 2, Color(Palette.ACCENT, 0.6), 16, 12))
+	var v := UI.vbox(8)
+	var h := UI.hbox(10)
+	h.add_child(Icon.make("build", 34, Palette.ACCENT))
+	h.add_child(UI.label(I18n.t("under_construction"), 24, Palette.ACCENT, 900))
+	v.add_child(h)
+	var prog := 1.0 - float(c["months"]) / maxf(1.0, float(c["total"]))
+	v.add_child(UI.progress(prog, Palette.ACCENT, 12.0))
+	v.add_child(UI.label(I18n.t("months_left") % int(c["months"]), 21, Palette.TEXT, 800))
+	if not c.get("rushed", false) and int(c["months"]) > 1:
+		var rc := st.rush_cost(lid)
+		var rb := UI.button(I18n.t("rush_build") % Geo.fmt_money(rc), "", "ff", 64)
+		rb.add_theme_font_size_override("font_size", 21)
+		rb.disabled = not st.can_afford(rc)
+		rb.pressed.connect(func():
+			if st.rush_construction(lid):
+				Audio.play("cash")
+				gs.toast.show_msg(I18n.t("rushed_toast"), "money")
+				gs.world.network.rebuild()
+				gs._refresh_live_sheet()
+		)
+		v.add_child(rb)
+	v.add_child(UI.wrap_label(I18n.t("overrun_hint"), 19, Palette.FAINT))
+	card.add_child(v)
+	return card
+
+
+# ------------------------------------------------------------------ poster / share
+
+func poster_modal() -> Modal:
+	var st := _st()
+	var m := Modal.create(I18n.t("share_poster"), 680.0)
+	var tr := TextureRect.new()
+	tr.custom_minimum_size = Vector2(minf(560.0, gs.root_ui.get_viewport_rect().size.x - 140.0), 0)
+	tr.custom_minimum_size.y = tr.custom_minimum_size.x * 1.25
+	tr.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	tr.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	tr.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	m.body.add_child(tr)
+	var path_holder := [""]
+	var render := func():
+		var path: String = await PosterView.render_to_file(gs, st)
+		path_holder[0] = path
+		var img := Image.load_from_file(ProjectSettings.globalize_path(path))
+		if img and is_instance_valid(tr):
+			tr.texture = ImageTexture.create_from_image(img)
+	render.call()
+	var row := UI.hbox(12)
+	var sh := UI.button(I18n.t("share"), "AccentButton", "megaphone")
+	sh.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sh.pressed.connect(func():
+		if path_holder[0] == "":
+			return
+		var where := Platform.share_image(path_holder[0], I18n.t("share_text") % [I18n.t(st.city.data["name_key"]), Geo.fmt_short(st.riders)])
+		if where != "":
+			gs.toast.show_msg(I18n.t("poster_saved") % where, "good", 5.0)
+	)
+	row.add_child(sh)
+	var ok := UI.button(I18n.t("close"))
+	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ok.pressed.connect(m.close)
+	row.add_child(ok)
+	m.body.add_child(row)
+	return m
 
 
 # ------------------------------------------------------------------ year report
@@ -740,6 +886,12 @@ func year_report(r: Dictionary) -> Modal:
 		gs.show_modal(timelapse_modal())
 	)
 	row.add_child(tl)
+	var shp := UI.icon_button("megaphone", 76)
+	shp.pressed.connect(func():
+		m.close()
+		gs.show_modal(poster_modal())
+	)
+	row.add_child(shp)
 	var ok := UI.button(I18n.t("continue"), "AccentButton", "play")
 	ok.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	ok.pressed.connect(m.close)

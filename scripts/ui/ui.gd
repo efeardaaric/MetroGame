@@ -156,6 +156,8 @@ static func clear(node: Node) -> void:
 
 
 static func pop_in(c: Control, from_scale: float = 0.9) -> void:
+	if Settings.reduce_motion:
+		return
 	c.pivot_offset = c.size * 0.5
 	c.scale = Vector2(from_scale, from_scale)
 	c.modulate.a = 0.0

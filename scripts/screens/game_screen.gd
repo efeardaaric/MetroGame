@@ -40,7 +40,10 @@ var mission_bar: ProgressBar
 var _pending_decision := {}
 var _shake := 0.0
 var day_icon: Icon
-var snow: SnowOverlay
+var weather: WeatherOverlay
+var confetti: Confetti
+var _fps_low_time := 0.0
+var auto_quality := true
 var _amb_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 var _last_viral_toast := -100000
@@ -90,9 +93,15 @@ func _ready() -> void:
 	fps_label.position = Vector2(12, 240)
 	root_ui.add_child(fps_label)
 
-	snow = SnowOverlay.new()
-	root_ui.add_child(snow)
-	root_ui.move_child(snow, 0)
+	weather = WeatherOverlay.new()
+	root_ui.add_child(weather)
+	root_ui.move_child(weather, 0)
+	confetti = Confetti.new()
+	root_ui.add_child(confetti)
+	state.construction_done.connect(_on_construction_done)
+	state.construction_overrun.connect(_on_overrun)
+	state.scenario_finished.connect(_on_scenario_finished)
+	world.apply_quality(Settings.high_quality)
 	_rng.randomize()
 	state.event_started.connect(_on_city_event)
 	state.tech_completed.connect(_on_tech_done)
@@ -514,6 +523,16 @@ func _process(delta: float) -> void:
 		if Settings.show_fps:
 			fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 		fps_label.visible = Settings.show_fps
+	# adaptive quality: drop decorative effects if the device struggles
+	if auto_quality and Settings.high_quality and Engine.get_frames_per_second() > 0 and Engine.get_frames_per_second() < 38:
+		_fps_low_time += delta
+		if _fps_low_time > 6.0:
+			Settings.high_quality = false
+			Settings.save_settings()
+			world.apply_quality(false)
+			toast.show_msg(I18n.t("quality_auto"), "info", 4.0)
+	else:
+		_fps_low_time = 0.0
 	_amb_timer += delta
 	if _amb_timer > 0.5:
 		_update_ambience(_amb_timer)
@@ -565,17 +584,35 @@ func _update_ambience(dt: float) -> void:
 			Audio.ambience_shot("ferry_horn", 0.35 + 0.4 * close)
 		if modes.has("tram") and close > 0.45 and _rng.randf() < dt * 0.03:
 			Audio.ambience_shot("tram_bell", 0.4 * close)
-	# snow
-	var target := 0.0
+	# weather: snow, rain, morning fog (Istanbul / Trabzon / Bursa in the cold months)
+	var snow_t := 0.0
 	if state.has_event("snow_storm"):
-		target = 1.0
+		snow_t = 1.0
 	elif state.is_snowing():
-		target = 0.4
-	snow.intensity = lerpf(snow.intensity, target, 0.3)
+		snow_t = 0.4
+	var rain_t := 0.8 if state.has_event("rain") else 0.0
+	var h := world.day_t * 24.0
+	var foggy_city := state.city_id in ["istanbul", "trabzon", "bursa"]
+	var fog_t := 0.0
+	if foggy_city and state.month in [10, 11, 0, 1, 2] and h > 5.0 and h < 9.5:
+		fog_t = 0.7 * (1.0 - absf(h - 7.2) / 2.4)
+	weather.set_levels(snow_t, rain_t, maxf(fog_t, 0.0), dt)
+	# music mood: tense in crises, calm at night
+	var tense := state.debt_months > 0 or _incident_count() >= 2 or state.demand.satisfaction < 35.0
+	Audio.set_music_mood("tense" if tense else ("night" if world.is_night() else "day"))
+
+
+func _incident_count() -> int:
+	var n := 0
+	for l in state.net.lines.values():
+		if l.has("incident"):
+			n += 1
+	return n
 
 
 func _exit_tree() -> void:
 	Audio.stop_ambience()
+	Audio.set_music_mood("day")
 
 
 func save_now() -> void:
@@ -805,7 +842,7 @@ func _on_incident(lid: int, kind: String) -> void:
 
 
 func _on_quake(minor: bool) -> void:
-	_shake = 1.6 if not minor else 0.9
+	_shake = 0.0 if Settings.reduce_motion else (1.6 if not minor else 0.9)
 	Settings.vibrate(400)
 	toast.show_msg(I18n.t("quake_minor_toast" if minor else "quake_major_toast"), "good" if minor else "error", 5.0)
 	world.network.rebuild()
@@ -815,7 +852,17 @@ func _update_mission_chip() -> void:
 	if mission_chip == null:
 		return
 	var mg := state.mgmt
-	mission_chip.visible = not mg.mission.is_empty()
+	mission_chip.visible = not mg.mission.is_empty() or not state.scenario.is_empty()
+	if mg.mission.is_empty() and not state.scenario.is_empty():
+		var left := int(float(state.scenario.get("years", 1)) * 12.0 - (float(state.year - state.start_year) * 12.0 + state.month))
+		var title := I18n.t("weekly_title") if state.scenario.get("kind", "") == "weekly" else I18n.t("scn_" + str(state.scenario["id"]))
+		mission_label.text = "%s · %d %s" % [title, maxi(0, left), I18n.t("months_short")]
+		var done := 0
+		for g in state.goals():
+			if state.completed_goals.has(g["id"]):
+				done += 1
+		mission_bar.value = float(done) / maxf(1.0, state.goals().size()) if state.scenario.get("kind", "") != "weekly" else clampf(1.0 - left / 36.0, 0.0, 1.0)
+		return
 	if mission_chip.visible:
 		mission_label.text = "%s · %d %s" % [mg.mission_text(state), int(mg.mission["months"]), I18n.t("months_short")]
 		mission_bar.value = mg.mission_progress(state)
@@ -878,6 +925,10 @@ func open_pause_menu() -> void:
 	add.call(I18n.t("resume"), "AccentButton", "play", m.close)
 	add.call(I18n.t("settings"), "", "gear", func():
 		SettingsPanel.open(m, func(): _refresh_language())
+	)
+	add.call(I18n.t("share_poster"), "", "megaphone", func():
+		m.close()
+		show_modal(panels.poster_modal())
 	)
 	add.call(I18n.t("timelapse"), "", "calendar", func():
 		m.close()
@@ -1106,18 +1157,30 @@ func finish_build() -> void:
 		_error(I18n.t("not_enough_cash"))
 		return
 	var extending := draft_extend >= 0
+	var prev_count: int = state.net.lines[draft_extend]["stations"].size() if extending else 0
+	var new_len: float = ev["length"]
+	var new_st := 0
+	for n in draft_nodes:
+		if n["sid"] < 0:
+			new_st += 1
 	draft_nodes_committed = []
 	for n in draft_nodes:
 		if n["sid"] < 0:
 			draft_nodes_committed.append(n["pos"])
 	var lid := state.net.commit_draft(build_mode, build_deep, draft_nodes, cost, draft_extend, draft_at_start, ev.get("vehicles", 0))
 	var lname: String = state.net.lines[lid]["name"]
+	var months := GameState.build_months(build_mode, build_deep, new_len, new_st)
+	if state.scenario.get("old_fleet", false):
+		state.net.lines[lid]["age"] = 120
+	if state.net.lines[lid].has("con"):
+		months = maxi(months, int(state.net.lines[lid]["con"]["months"]))
+	state.start_construction(lid, months, prev_count, draft_at_start, cost)
 	state.log_line(lid)
 	_check_archaeology(lid, cost)
-	state.feed.on_line_opened(state, lid, extending)
+	state.feed.post("con_start", {"line": lname, "n": int(state.net.lines[lid]["con"]["months"])}, state, "citizen")
 	Audio.play("build")
 	Settings.vibrate(40)
-	toast.show_msg((I18n.t("line_extended") if extending else I18n.t("line_built")) % lname, "good")
+	toast.show_msg(I18n.t("con_started") % [lname, int(state.net.lines[lid]["con"]["months"])], "good")
 	cancel_build()
 	state.recompute_if_dirty()
 	state.check_goals()
@@ -1135,6 +1198,76 @@ func finish_build() -> void:
 
 
 # ======================================================================== events
+
+func _on_construction_done(lid: int) -> void:
+	if not state.net.lines.has(lid):
+		return
+	var l: Dictionary = state.net.lines[lid]
+	state.feed.on_line_opened(state, lid, false)
+	toast.show_msg(I18n.t("line_built") % l["name"], "good", 4.0)
+	Audio.play("chime")
+	Audio.play("goal", 1.2, -4.0)
+	Settings.vibrate(60)
+	confetti.burst()
+	world.network.rebuild()
+	check_achievements()
+
+
+func _on_overrun(lid: int, months: int) -> void:
+	if state.net.lines.has(lid):
+		toast.show_msg(I18n.t("con_overrun_toast") % [state.net.lines[lid]["name"], months], "error", 4.5)
+		Audio.play("error")
+
+
+func _on_scenario_finished(success: bool, stars: int, score: float) -> void:
+	var sc := state.scenario
+	var weekly: bool = sc.get("kind", "") == "weekly"
+	var improved := false
+	if weekly:
+		improved = SaveManager.record_weekly(int(sc["week"]), score)
+	elif success:
+		SaveManager.record_scenario(str(sc["id"]), stars)
+	var m := Modal.create(I18n.t("weekly_done") if weekly else (I18n.t("scenario_won") if success else I18n.t("scenario_lost")), 620.0, false)
+	if weekly:
+		var big := UI.title(Geo.fmt_int(score), 64, Palette.ACCENT)
+		big.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		m.body.add_child(big)
+		var sub := UI.label(I18n.t("weekly_score_hint") % Geo.fmt_int(SaveManager.weekly_best(int(sc["week"]))), 23, Palette.MUTED)
+		sub.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		m.body.add_child(sub)
+		if improved:
+			m.body.add_child(UI.plate(I18n.t("new_record"), Palette.GOOD))
+	elif success:
+		var row := UI.hbox(8)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		for i in 3:
+			row.add_child(Icon.make("star" if i < stars else "star_o", 64, Palette.ACCENT if i < stars else Palette.FAINT))
+		m.body.add_child(row)
+	else:
+		var l := UI.wrap_label(I18n.t("scenario_lost_body"), 25, Palette.MUTED)
+		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		m.body.add_child(l)
+	if success:
+		confetti.burst(140)
+		Audio.play("year")
+	var again := UI.button(I18n.t("restart"), "AccentButton", "undo")
+	again.pressed.connect(func():
+		m.close()
+		get_parent().call("start_city", state.slot(), true)
+	)
+	m.body.add_child(again)
+	var share := UI.button(I18n.t("share_poster"), "", "megaphone")
+	share.pressed.connect(func(): show_modal(panels.poster_modal()))
+	m.body.add_child(share)
+	var menu := UI.button(I18n.t("main_menu"), "", "home")
+	menu.pressed.connect(func():
+		save_now()
+		m.close()
+		exit_to_menu.emit()
+	)
+	m.body.add_child(menu)
+	show_modal(m)
+
 
 ## Istanbul's historic peninsula: underground works may hit archaeological finds.
 func _check_archaeology(lid: int, cost: float) -> void:

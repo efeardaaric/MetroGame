@@ -33,6 +33,8 @@ var crowded_lines := 0
 var debug := false
 var city_scale := 1.0
 var mods := {}  # seasonal / event modifiers, see CityEvents
+var zones: Array = []      # snapshot used by async workers (falls back to city.zones)
+var zones_snapshot := false
 var debug_rows: Array = []
 
 
@@ -53,6 +55,8 @@ func _init(c: CityMap, n: TransitNetwork) -> void:
 
 
 func compute() -> void:
+	if not zones_snapshot:
+		zones = city.zones
 	riders = 0.0
 	boardings = 0.0
 	line_riders.clear()
@@ -67,7 +71,7 @@ func compute() -> void:
 	var op_lines: Array = []
 	for l in net.lines.values():
 		var closed: bool = l.has("incident") and float(l["incident"]["cap"]) <= 0.0
-		if l["vehicles"] > 0 and l["stations"].size() >= 2 and not closed:
+		if l["vehicles"] > 0 and l["stations"].size() >= 2 and not closed and net.is_operational(l):
 			op_lines.append(l)
 			line_riders[l["id"]] = 0.0
 			var segs: int = l["stations"].size() - (0 if l.get("loop", false) else 1)
@@ -87,7 +91,7 @@ func compute() -> void:
 	var access: Array = []
 	var covered_pop := 0.0
 	var total_pop := 0.0
-	for z in city.zones:
+	for z in zones:
 		var tab := {}
 		var samples: PackedVector2Array = z["samples"]
 		var w := 1.0 / samples.size()
@@ -128,13 +132,13 @@ func compute() -> void:
 		sp[sid] = _dijkstra(g, hub_of[sid])
 
 	# ---- gravity demand
-	var nz := city.zones.size()
+	var nz := zones.size()
 	var jobs := PackedFloat32Array()
 	jobs.resize(nz)
 	var poi_m: Dictionary = mods.get("poi", {})
 	var kind_m: Dictionary = mods.get("kind", {})
 	for i in nz:
-		var z: Dictionary = city.zones[i]
+		var z: Dictionary = zones[i]
 		var j: float = z["jobs"]
 		if z["poi_id"] != "":
 			j *= float(poi_m.get(z["poi_id"], 1.0)) * float(kind_m.get(z.get("kind", ""), 1.0))
@@ -149,7 +153,7 @@ func compute() -> void:
 		for j in nz:
 			if i == j:
 				continue
-			s += jobs[j] * _impedance(city.zones[i]["pos"].distance_to(city.zones[j]["pos"]))
+			s += jobs[j] * _impedance(zones[i]["pos"].distance_to(zones[j]["pos"]))
 		attract_norm[i] = max(s, 0.0001)
 
 	# pass 1 & 2 (capacity restraint)
@@ -167,14 +171,14 @@ func compute() -> void:
 			f.fill(0.0)
 		station_boardings.clear()
 		for i in nz:
-			var zi: Dictionary = city.zones[i]
+			var zi: Dictionary = zones[i]
 			if zi["pop"] <= 0.0 or access[i].is_empty():
 				continue
 			var produced: float = zi["pop"] * 1000.0 * TRIP_RATE * DEMAND_SCALE * city_scale * demand_mult
 			for j in nz:
 				if i == j or access[j].is_empty():
 					continue
-				var zj: Dictionary = city.zones[j]
+				var zj: Dictionary = zones[j]
 				var dist: float = zi["pos"].distance_to(zj["pos"])
 				if dist < 1.2:
 					continue
@@ -214,7 +218,11 @@ func compute() -> void:
 						for e in path["edges"]:
 							var lid2: int = e[0]
 							var f2: PackedFloat32Array = line_seg_flow[lid2]
-							f2[e[1]] += flow
+							if e[1] is Array:
+								for si in e[1]:
+									f2[si] += flow
+							else:
+								f2[e[1]] += flow
 						for b in path["boards"]:
 							var lid3: int = b[0]
 							line_riders[lid3] += flow
@@ -293,8 +301,10 @@ func _build_graph(op_lines: Array) -> Dictionary:
 	var adj: Array = [] # Array of Array of [to, cost, kind, a, b]
 	# kind: 0 board(line, sid) 1 alight 2 ride(line, seg_index_dir) 3 walk
 	for l in op_lines:
-		for sid in l["stations"]:
-			if not hub_of.has(sid):
+		var mask0: Array = net.stop_mask(l)
+		for i in l["stations"].size():
+			var sid: int = l["stations"][i]
+			if mask0[i] and not hub_of.has(sid):
 				hub_of[sid] = node_count
 				node_count += 1
 				adj.append([])
@@ -307,24 +317,56 @@ func _build_graph(op_lines: Array) -> Dictionary:
 		var wait: float = minf(net.line_headway_min(l) * 0.5, 15.0) * float(mods.get("wait", 1.0))
 		var tpen: float = TRANSFER_PENALTY * float(mods.get("transfer", 1.0))
 		var st: Array = l["stations"]
+		var mask: Array = net.stop_mask(l)
+		var express: bool = l.get("express", false) and net.can_express(l)
+		if express:
+			spd *= 1.15
 		var route_nodes: Array = []
-		for sid in st:
+		for i in st.size():
+			var sid: int = st[i]
+			if not mask[i]:
+				route_nodes.append(-1)
+				continue
 			var rn := node_count
 			node_count += 1
 			adj.append([])
 			route_nodes.append(rn)
-			adj[hub_of[sid]].append([rn, wait + tpen * 0.5, 0, lid, sid])
-			adj[rn].append([hub_of[sid], tpen * 0.5, 1, lid, sid])
+			var tp: float = tpen * (0.4 if net.stations[sid].get("hub", 0) > 0 else 1.0)
+			adj[hub_of[sid]].append([rn, wait + tp * 0.5, 0, lid, sid])
+			adj[rn].append([hub_of[sid], tp * 0.5, 1, lid, sid])
 		var n := st.size()
-		var segs := n if l.get("loop", false) else n - 1
+		var loop: bool = l.get("loop", false) and net.active_range(l) == Vector2i(0, n - 1)
+		var segs := n if loop else n - 1
 		var comfort: float = m["comfort"] * float(comfort_m.get(l["mode"], 1.0))
-		for k in segs:
-			var a: int = k
-			var b: int = (k + 1) % n
-			var d: float = net.stations[st[a]]["pos"].distance_to(net.stations[st[b]]["pos"])
-			var t: float = (d / spd * 60.0 + m["dwell_min"] * float(mods.get("dwell", 1.0))) / comfort
-			adj[route_nodes[a]].append([route_nodes[b], t, 2, lid, k * 2])
-			adj[route_nodes[b]].append([route_nodes[a], t, 2, lid, k * 2 + 1])
+		var dwell: float = m["dwell_min"] * float(mods.get("dwell", 1.0))
+		# connect consecutive stops; skipped stations fold their segments into one edge
+		var k := 0
+		while k < segs:
+			if route_nodes[k] < 0:
+				k += 1
+				continue
+			var d := 0.0
+			var seg_list: Array = []
+			var j := k
+			while true:
+				var nb: int = (j + 1) % n
+				d += net.stations[st[j]]["pos"].distance_to(net.stations[st[nb]]["pos"])
+				seg_list.append(j)
+				j += 1
+				if j >= segs or route_nodes[j % n] >= 0 or (not loop and j >= n - 1):
+					break
+			var b_node: int = route_nodes[j % n] if j % n < route_nodes.size() else -1
+			if b_node < 0:
+				break
+			var t: float = (d / spd * 60.0 + dwell) / comfort
+			var fwd: Array = []
+			var back: Array = []
+			for sidx in seg_list:
+				fwd.append(sidx * 2)
+				back.append(sidx * 2 + 1)
+			adj[route_nodes[k]].append([b_node, t, 2, lid, fwd if fwd.size() > 1 else fwd[0]])
+			adj[b_node].append([route_nodes[k], t, 2, lid, back if back.size() > 1 else back[0]])
+			k = j
 	# walking transfers between nearby stations
 	var sids := hub_of.keys()
 	for i in sids.size():

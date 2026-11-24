@@ -16,6 +16,7 @@ extends RefCounted
 ##   flag: String             set a permanent flag (e.g. "retrofit", "elevators")
 ##   mission: String          start a mission of that type
 ##   sat_bonus: float         permanent satisfaction bonus
+##   rival: int               a rival service makes cars/taxis more attractive for N months
 
 const LIST := {
 	"union_wage": {"weight": 1.0, "min_lines": 2, "icon": "people", "options": [
@@ -74,6 +75,11 @@ const LIST := {
 	"new_mode": {"weight": 0.5, "min_lines": 2, "icon": "lines", "options": [
 		{"mission": "build_mode"},
 		{},
+	]},
+	"rival_app": {"weight": 0.7, "min_lines": 2, "icon": "warning", "options": [
+		{"cash_g": -0.08, "rival": 2, "approval": 1.0},
+		{"fare_cap": [0.85, 6], "rival": 3},
+		{"rival": 9, "approval": -1.0},
 	]},
 	"satisfaction_drive": {"weight": 0.6, "min_lines": 2, "icon": "smile", "options": [
 		{"mission": "satisfaction"},

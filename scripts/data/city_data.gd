@@ -8,7 +8,7 @@ extends RefCounted
 ## thousand daily trip ends), r (approx. radius km).
 ## POI fields: id, name_key, lon, lat, kind (airport/university/landmark/terminal/business).
 
-const CITY_IDS: Array[String] = ["istanbul", "ankara", "izmir"]
+const CITY_IDS: Array[String] = ["istanbul", "ankara", "izmir", "eskisehir", "antalya", "bursa", "trabzon"]
 
 
 static func get_city(id: String) -> Dictionary:
@@ -19,6 +19,14 @@ static func get_city(id: String) -> Dictionary:
 			return _ankara()
 		"izmir":
 			return _izmir()
+		"eskisehir":
+			return _eskisehir()
+		"antalya":
+			return _antalya()
+		"bursa":
+			return _bursa()
+		"trabzon":
+			return _trabzon()
 	return _istanbul()
 
 
@@ -361,4 +369,225 @@ static func _izmir() -> Dictionary:
 		],
 		"star_goals": [3, 5, 7],
 		"divide": [],
+	}
+
+
+static func _eskisehir() -> Dictionary:
+	return {
+		"id": "eskisehir", "name_key": "city_eskisehir", "subtitle_key": "city_eskisehir_sub",
+		"bounds": [30.40, 39.72, 30.64, 39.84],
+		"start_cash": 3200.0, "annual_grant": 900.0, "demand_scale": 0.45,
+		"difficulty": 1, "unlock_stars": 3, "base_elev": 790.0, "accent": Color("8e44ad"),
+		"water_polys": [],
+		"channels": [
+			{"pts": [[30.40, 39.792], [30.45, 39.786], [30.49, 39.781], [30.515, 39.777], [30.54, 39.779], [30.58, 39.784], [30.64, 39.790]],
+			 "w": [0.06, 0.06, 0.06, 0.07, 0.06, 0.06, 0.06], "river": true},
+		],
+		"lakes": [{"lon": 30.452, "lat": 39.770, "rx": 0.35, "ry": 0.22, "rot": 0.2}],
+		"islands": [],
+		"hills": [
+			{"lon": 30.525, "lat": 39.755, "h": 90.0, "r": 1.6},
+			{"lon": 30.50, "lat": 39.735, "h": 160.0, "r": 3.0},
+			{"lon": 30.60, "lat": 39.74, "h": 120.0, "r": 3.0},
+		],
+		"parks": [{"lon": 30.452, "lat": 39.773, "rx": 0.9, "ry": 0.6, "rot": 0.1, "name_key": "park_sazova"}],
+		"zones": [
+			{"name": "Odunpazarı", "lon": 30.525, "lat": 39.762, "pop": 260, "jobs": 180, "r": 1.4},
+			{"name": "Köprübaşı", "lon": 30.517, "lat": 39.776, "pop": 40, "jobs": 260, "r": 0.7},
+			{"name": "Tepebaşı", "lon": 30.500, "lat": 39.790, "pop": 210, "jobs": 140, "r": 1.4},
+			{"name": "Bağlar", "lon": 30.490, "lat": 39.772, "pop": 90, "jobs": 60, "r": 0.9},
+			{"name": "Batıkent", "lon": 30.470, "lat": 39.802, "pop": 110, "jobs": 40, "r": 1.1},
+			{"name": "Emek", "lon": 30.545, "lat": 39.802, "pop": 100, "jobs": 40, "r": 1.0},
+			{"name": "Vişnelik", "lon": 30.555, "lat": 39.766, "pop": 90, "jobs": 50, "r": 0.9},
+			{"name": "Sümer", "lon": 30.550, "lat": 39.782, "pop": 80, "jobs": 70, "r": 0.9},
+			{"name": "Çamlıca", "lon": 30.490, "lat": 39.748, "pop": 90, "jobs": 30, "r": 1.0},
+			{"name": "Osmangazi", "lon": 30.580, "lat": 39.775, "pop": 70, "jobs": 40, "r": 1.0},
+		],
+		"pois": [
+			{"id": "anadolu_uni", "name_key": "poi_anadolu_uni", "lon": 30.500, "lat": 39.792, "kind": "university", "jobs": 90},
+			{"id": "esogu", "name_key": "poi_esogu", "lon": 30.484, "lat": 39.752, "kind": "university", "jobs": 70},
+			{"id": "esk_otogar", "name_key": "poi_esk_otogar", "lon": 30.565, "lat": 39.776, "kind": "terminal", "jobs": 50},
+			{"id": "esk_gar", "name_key": "poi_esk_gar", "lon": 30.508, "lat": 39.781, "kind": "terminal", "jobs": 50},
+			{"id": "sazova", "name_key": "poi_sazova", "lon": 30.446, "lat": 39.768, "kind": "landmark", "jobs": 40},
+		],
+		"flavor": {"birds": [], "ambience": ["city"], "university_pois": ["anadolu_uni", "esogu"],
+			"decor": [{"kind": "tower", "lon": 30.527, "lat": 39.758, "name_key": "decor_odunpazari"}],
+			"bridges": [], "events": ["rain", "concert"], "chatter": "flavor_eskisehir"},
+		"goals": [
+			{"id": "riders_30k", "type": "riders", "value": 30000},
+			{"id": "unis_esk", "type": "serve_pois", "pois": ["anadolu_uni", "esogu"]},
+			{"id": "tram_city", "type": "mode_riders", "mode": "tram", "value": 25000},
+			{"id": "riders_80k", "type": "riders", "value": 80000},
+			{"id": "coverage_50", "type": "coverage", "value": 0.50},
+			{"id": "profit_year", "type": "profit"},
+			{"id": "riders_150k", "type": "riders", "value": 150000},
+		],
+		"star_goals": [3, 5, 7], "divide": [],
+	}
+
+
+static func _antalya() -> Dictionary:
+	return {
+		"id": "antalya", "name_key": "city_antalya", "subtitle_key": "city_antalya_sub",
+		"bounds": [30.56, 36.83, 30.90, 36.99],
+		"start_cash": 4800.0, "annual_grant": 1300.0, "demand_scale": 0.7,
+		"difficulty": 2, "unlock_stars": 4, "base_elev": 40.0, "accent": Color("ff7b00"),
+		"water_polys": [
+			[[30.56, 36.868], [30.60, 36.866], [30.625, 36.866], [30.65, 36.872], [30.675, 36.880], [30.695, 36.884],
+			 [30.705, 36.882], [30.712, 36.886], [30.73, 36.882], [30.76, 36.872], [30.79, 36.860], [30.82, 36.852],
+			 [30.86, 36.846], [30.90, 36.842], [30.90, 36.80], [30.56, 36.80]],
+		],
+		"channels": [
+			{"pts": [[30.74, 36.97], [30.75, 36.93], [30.77, 36.89], [30.785, 36.862]], "w": [0.05, 0.05, 0.06, 0.07], "river": true},
+		],
+		"lakes": [], "islands": [],
+		"hills": [
+			{"lon": 30.57, "lat": 36.93, "h": 520.0, "r": 5.0},
+			{"lon": 30.62, "lat": 36.98, "h": 300.0, "r": 5.0},
+			{"lon": 30.88, "lat": 36.98, "h": 120.0, "r": 4.0},
+		],
+		"parks": [{"lon": 30.665, "lat": 36.893, "rx": 0.6, "ry": 0.4, "rot": 0.0, "name_key": "park_ataturk_ant"}],
+		"zones": [
+			{"name": "Muratpaşa", "lon": 30.720, "lat": 36.892, "pop": 330, "jobs": 260, "r": 1.6},
+			{"name": "Kaleiçi", "lon": 30.706, "lat": 36.886, "pop": 20, "jobs": 180, "r": 0.5},
+			{"name": "Konyaaltı", "lon": 30.630, "lat": 36.880, "pop": 190, "jobs": 110, "r": 1.6},
+			{"name": "Kepez", "lon": 30.700, "lat": 36.930, "pop": 450, "jobs": 120, "r": 2.6},
+			{"name": "Varsak", "lon": 30.730, "lat": 36.955, "pop": 160, "jobs": 30, "r": 1.6},
+			{"name": "Lara", "lon": 30.800, "lat": 36.868, "pop": 120, "jobs": 140, "r": 1.6},
+			{"name": "Meltem", "lon": 30.655, "lat": 36.893, "pop": 90, "jobs": 90, "r": 0.9},
+			{"name": "Fener", "lon": 30.760, "lat": 36.880, "pop": 110, "jobs": 60, "r": 1.2},
+			{"name": "Aksu", "lon": 30.840, "lat": 36.940, "pop": 70, "jobs": 30, "r": 2.0},
+			{"name": "Döşemealtı", "lon": 30.620, "lat": 36.975, "pop": 70, "jobs": 30, "r": 2.0},
+		],
+		"pois": [
+			{"id": "ayt", "name_key": "poi_ayt", "lon": 30.800, "lat": 36.900, "kind": "airport", "jobs": 120},
+			{"id": "akdeniz_uni", "name_key": "poi_akdeniz_uni", "lon": 30.650, "lat": 36.897, "kind": "university", "jobs": 70},
+			{"id": "konyaalti_beach", "name_key": "poi_konyaalti_beach", "lon": 30.625, "lat": 36.870, "kind": "landmark", "jobs": 70},
+			{"id": "lara_beach", "name_key": "poi_lara_beach", "lon": 30.820, "lat": 36.856, "kind": "landmark", "jobs": 70},
+			{"id": "ant_otogar", "name_key": "poi_ant_otogar", "lon": 30.680, "lat": 36.922, "kind": "terminal", "jobs": 50},
+		],
+		"flavor": {"birds": [{"kind": "gull", "count": 10}], "ambience": ["sea", "city"], "summer_months": [5, 6, 7, 8],
+			"tourism": true,
+			"decor": [{"kind": "tower", "lon": 30.704, "lat": 36.884, "name_key": "decor_hidirlik"}],
+			"bridges": [], "events": ["rain", "concert"], "chatter": "flavor_antalya"},
+		"goals": [
+			{"id": "riders_40k", "type": "riders", "value": 40000},
+			{"id": "airport_ant", "type": "serve_pois", "pois": ["ayt"]},
+			{"id": "beaches", "type": "serve_pois", "pois": ["konyaalti_beach", "lara_beach"]},
+			{"id": "riders_120k", "type": "riders", "value": 120000},
+			{"id": "three_modes", "type": "modes", "value": 3},
+			{"id": "profit_year", "type": "profit"},
+			{"id": "riders_250k", "type": "riders", "value": 250000},
+		],
+		"star_goals": [3, 5, 7], "divide": [],
+	}
+
+
+static func _bursa() -> Dictionary:
+	return {
+		"id": "bursa", "name_key": "city_bursa", "subtitle_key": "city_bursa_sub",
+		"bounds": [28.85, 40.09, 29.24, 40.28],
+		"start_cash": 5200.0, "annual_grant": 1500.0, "demand_scale": 0.75,
+		"difficulty": 2, "unlock_stars": 5, "base_elev": 120.0, "accent": Color("2a9d8f"),
+		"water_polys": [],
+		"channels": [
+			{"pts": [[28.85, 40.215], [28.92, 40.225], [28.98, 40.235], [29.05, 40.245], [29.12, 40.25], [29.24, 40.255]],
+			 "w": [0.07, 0.07, 0.07, 0.07, 0.07, 0.07], "river": true},
+		],
+		"lakes": [], "islands": [],
+		"hills": [
+			{"lon": 29.12, "lat": 40.09, "h": 1700.0, "r": 6.5},
+			{"lon": 29.02, "lat": 40.13, "h": 600.0, "r": 4.5},
+			{"lon": 29.20, "lat": 40.15, "h": 700.0, "r": 4.5},
+			{"lon": 29.06, "lat": 40.186, "h": 60.0, "r": 1.0},
+		],
+		"parks": [{"lon": 29.14, "lat": 40.11, "rx": 4.0, "ry": 2.0, "rot": 0.1, "name_key": "park_uludag"}],
+		"zones": [
+			{"name": "Heykel", "lon": 29.062, "lat": 40.184, "pop": 60, "jobs": 330, "r": 0.8},
+			{"name": "Osmangazi", "lon": 29.045, "lat": 40.195, "pop": 520, "jobs": 220, "r": 2.2},
+			{"name": "Yıldırım", "lon": 29.100, "lat": 40.190, "pop": 560, "jobs": 140, "r": 2.4},
+			{"name": "Nilüfer", "lon": 28.990, "lat": 40.218, "pop": 420, "jobs": 200, "r": 2.6},
+			{"name": "Görükle", "lon": 28.880, "lat": 40.228, "pop": 90, "jobs": 30, "r": 1.6},
+			{"name": "Emek", "lon": 29.000, "lat": 40.245, "pop": 130, "jobs": 50, "r": 1.4},
+			{"name": "OSB", "lon": 29.030, "lat": 40.242, "pop": 10, "jobs": 300, "r": 1.4},
+			{"name": "Kestel", "lon": 29.210, "lat": 40.200, "pop": 70, "jobs": 40, "r": 1.6},
+			{"name": "Soğanlı", "lon": 29.060, "lat": 40.230, "pop": 140, "jobs": 60, "r": 1.4},
+			{"name": "Hamitler", "lon": 29.110, "lat": 40.230, "pop": 120, "jobs": 30, "r": 1.4},
+			{"name": "Teferrüç", "lon": 29.100, "lat": 40.170, "pop": 30, "jobs": 30, "r": 0.6},
+		],
+		"pois": [
+			{"id": "uludag_uni", "name_key": "poi_uludag_uni", "lon": 28.872, "lat": 40.224, "kind": "university", "jobs": 90},
+			{"id": "uludag_ski", "name_key": "poi_uludag_ski", "lon": 29.125, "lat": 40.105, "kind": "landmark", "jobs": 50},
+			{"id": "bursa_otogar", "name_key": "poi_bursa_otogar", "lon": 29.075, "lat": 40.262, "kind": "terminal", "jobs": 50},
+			{"id": "ulu_cami", "name_key": "poi_ulu_cami", "lon": 29.060, "lat": 40.184, "kind": "landmark", "jobs": 60},
+		],
+		"flavor": {"birds": [], "ambience": ["city"], "winter_months": [11, 0, 1], "ski_poi": "uludag_ski",
+			"university_pois": ["uludag_uni"],
+			"decor": [{"kind": "fortress", "lon": 29.052, "lat": 40.187, "name_key": "decor_tophane"}],
+			"bridges": [], "events": ["rain", "snow_storm", "concert"], "chatter": "flavor_bursa"},
+		"goals": [
+			{"id": "riders_50k", "type": "riders", "value": 50000},
+			{"id": "gondola_uludag", "type": "mode_riders", "mode": "gondola", "value": 2000},
+			{"id": "uni_bursa", "type": "serve_pois", "pois": ["uludag_uni"]},
+			{"id": "riders_150k", "type": "riders", "value": 150000},
+			{"id": "coverage_35", "type": "coverage", "value": 0.35},
+			{"id": "profit_year", "type": "profit"},
+			{"id": "riders_300k", "type": "riders", "value": 300000},
+		],
+		"star_goals": [3, 5, 7], "divide": [],
+	}
+
+
+static func _trabzon() -> Dictionary:
+	return {
+		"id": "trabzon", "name_key": "city_trabzon", "subtitle_key": "city_trabzon_sub",
+		"bounds": [39.62, 40.955, 39.86, 41.03],
+		"start_cash": 3000.0, "annual_grant": 800.0, "demand_scale": 0.45,
+		"difficulty": 3, "unlock_stars": 6, "base_elev": 15.0, "accent": Color("7b2d8b"),
+		"water_polys": [
+			[[39.62, 40.999], [39.65, 41.001], [39.68, 41.004], [39.70, 41.007], [39.72, 41.009], [39.735, 41.008],
+			 [39.75, 41.004], [39.77, 41.001], [39.79, 40.999], [39.81, 40.995], [39.83, 40.991], [39.86, 40.987],
+			 [39.86, 41.06], [39.62, 41.06]],
+		],
+		"channels": [
+			{"pts": [[39.745, 40.955], [39.748, 40.975], [39.75, 40.990], [39.752, 41.003]], "w": [0.04, 0.05, 0.06, 0.07], "river": true},
+		],
+		"lakes": [], "islands": [],
+		"hills": [
+			{"lon": 39.735, "lat": 40.992, "h": 230.0, "r": 0.9},
+			{"lon": 39.70, "lat": 40.965, "h": 420.0, "r": 3.0},
+			{"lon": 39.80, "lat": 40.965, "h": 380.0, "r": 3.0},
+			{"lon": 39.65, "lat": 40.97, "h": 300.0, "r": 3.0},
+		],
+		"parks": [],
+		"zones": [
+			{"name": "Ortahisar", "lon": 39.722, "lat": 41.003, "pop": 140, "jobs": 220, "r": 0.9},
+			{"name": "Meydan", "lon": 39.732, "lat": 41.004, "pop": 30, "jobs": 160, "r": 0.5},
+			{"name": "Kaşüstü", "lon": 39.690, "lat": 40.998, "pop": 60, "jobs": 30, "r": 0.9},
+			{"name": "Değirmendere", "lon": 39.752, "lat": 40.999, "pop": 80, "jobs": 60, "r": 0.8},
+			{"name": "Bahçecik", "lon": 39.705, "lat": 40.992, "pop": 60, "jobs": 20, "r": 0.7},
+			{"name": "Pelitli", "lon": 39.800, "lat": 40.989, "pop": 50, "jobs": 20, "r": 0.9},
+			{"name": "Beşirli", "lon": 39.665, "lat": 40.996, "pop": 50, "jobs": 25, "r": 0.9},
+			{"name": "Yalıncak", "lon": 39.780, "lat": 40.990, "pop": 40, "jobs": 30, "r": 0.8},
+			{"name": "Boztepe", "lon": 39.735, "lat": 40.991, "pop": 20, "jobs": 10, "r": 0.4},
+		],
+		"pois": [
+			{"id": "tzx", "name_key": "poi_tzx", "lon": 39.785, "lat": 40.994, "kind": "airport", "jobs": 40},
+			{"id": "ktu", "name_key": "poi_ktu", "lon": 39.770, "lat": 40.992, "kind": "university", "jobs": 60},
+			{"id": "boztepe", "name_key": "poi_boztepe", "lon": 39.736, "lat": 40.989, "kind": "landmark", "jobs": 40},
+			{"id": "trb_meydan", "name_key": "poi_trb_meydan", "lon": 39.732, "lat": 41.005, "kind": "landmark", "jobs": 40},
+		],
+		"flavor": {"birds": [{"kind": "gull", "count": 8}], "ambience": ["sea", "city"], "ferry_horn": true,
+			"decor": [{"kind": "fortress", "lon": 39.715, "lat": 41.004, "name_key": "decor_trb_kale"}],
+			"bridges": [], "events": ["rain", "concert"], "chatter": "flavor_trabzon"},
+		"goals": [
+			{"id": "riders_15k", "type": "riders", "value": 15000},
+			{"id": "boztepe", "type": "serve_pois", "pois": ["boztepe"]},
+			{"id": "airport_trb", "type": "serve_pois", "pois": ["tzx"]},
+			{"id": "riders_40k", "type": "riders", "value": 40000},
+			{"id": "two_modes", "type": "modes", "value": 2},
+			{"id": "profit_year", "type": "profit"},
+			{"id": "riders_80k", "type": "riders", "value": 80000},
+		],
+		"star_goals": [3, 5, 7], "divide": [],
 	}

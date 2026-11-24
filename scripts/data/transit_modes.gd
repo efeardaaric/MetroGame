@@ -3,7 +3,7 @@ extends RefCounted
 ## Definitions of the six vehicle / infrastructure types.
 ## Money is in million ₺ (M₺). Distances in km, speeds in km/h.
 
-const ORDER: Array[String] = ["metro", "tram", "metrobus", "rail", "funicular", "ferry"]
+const ORDER: Array[String] = ["metro", "tram", "metrobus", "rail", "funicular", "gondola", "ferry"]
 
 const MODES := {
 	"metro": {
@@ -51,6 +51,15 @@ const MODES := {
 		"max_grade": 1.0, "min_spacing": 0.2, "max_stations": 2, "max_length": 3.0,
 		"default_vehicles": 2, "max_vehicles": 2, "width": 5.0, "comfort": 1.0,
 	},
+	"gondola": {
+		"name_key": "mode_gondola", "desc_key": "mode_gondola_desc", "icon": "G",
+		"speed": 18.0, "capacity": 240, "dwell_min": 0.6,
+		"cost_km": 55.0, "cost_km_deep": 55.0, "cost_station": 18.0,
+		"vehicle_cost": 4.0, "vehicle_opex": 0.6, "km_opex": 0.6,
+		"underground": false, "surface": true, "water": "any",
+		"max_grade": 3.0, "min_spacing": 0.3, "max_stations": 3, "max_length": 10.0,
+		"default_vehicles": 8, "max_vehicles": 30, "width": 4.0, "comfort": 1.15,
+	},
 	"ferry": {
 		"name_key": "mode_ferry", "desc_key": "mode_ferry_desc", "icon": "V",
 		"speed": 24.0, "capacity": 900, "dwell_min": 3.0,
@@ -86,4 +95,5 @@ static func mode_prefix(id: String) -> String:
 		"rail": return "B"
 		"funicular": return "F"
 		"ferry": return "V"
+		"gondola": return "TF"
 	return "L"

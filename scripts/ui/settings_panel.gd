@@ -5,7 +5,13 @@ extends RefCounted
 
 static func open(parent: Node, on_language_changed: Callable = Callable()) -> Modal:
 	var m := Modal.create(I18n.t("settings"), 640.0)
-	var b := m.body
+	var sc0 := ScrollContainer.new()
+	sc0.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	sc0.custom_minimum_size.y = minf(980.0, parent.get_viewport().get_visible_rect().size.y * 0.66)
+	m.body.add_child(sc0)
+	var b := UI.vbox(18)
+	b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	sc0.add_child(b)
 
 	b.add_child(_slider_row(I18n.t("music"), Settings.music_volume, func(v: float):
 		Settings.music_volume = v
@@ -49,9 +55,60 @@ static func open(parent: Node, on_language_changed: Callable = Callable()) -> Mo
 		lrow.add_child(btn)
 	b.add_child(lrow)
 	b.add_child(HSeparator.new())
+	# graphics & accessibility
+	b.add_child(UI.plate(I18n.t("accessibility"), Palette.STRIPES[2]))
+	b.add_child(_toggle_row(I18n.t("high_quality"), Settings.high_quality, func(on: bool):
+		Settings.high_quality = on
+		Settings.save_settings()
+	))
+	b.add_child(_toggle_row(I18n.t("colorblind"), Settings.colorblind, func(on: bool):
+		Settings.colorblind = on
+		Settings.save_settings()
+	))
+	b.add_child(_toggle_row(I18n.t("reduce_motion"), Settings.reduce_motion, func(on: bool):
+		Settings.reduce_motion = on
+		Settings.save_settings()
+	))
+	var trow := UI.hbox(10)
+	var tl := UI.label(I18n.t("text_size"), 26, Palette.MUTED)
+	tl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	trow.add_child(tl)
+	for sc in [1.0, 1.15, 1.3]:
+		var tb := UI.button("A" if sc == 1.0 else ("A+" if sc < 1.2 else "A++"), "AccentButton" if is_equal_approx(Settings.text_scale, sc) else "", "", 60)
+		tb.pressed.connect(func():
+			Settings.text_scale = sc
+			Settings.save_settings()
+			m.close()
+		)
+		trow.add_child(tb)
+	b.add_child(trow)
+	b.add_child(HSeparator.new())
+	# save transfer between devices (no account needed)
+	b.add_child(UI.plate(I18n.t("save_transfer"), Palette.STRIPES[1]))
+	var srow := UI.hbox(10)
+	var ex := UI.button(I18n.t("export_save"), "", "", 64)
+	ex.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	ex.add_theme_font_size_override("font_size", 21)
+	ex.pressed.connect(func():
+		DisplayServer.clipboard_set(SaveManager.export_code())
+		Audio.play("cash")
+		ex.text = I18n.t("copied")
+	)
+	srow.add_child(ex)
+	var im := UI.button(I18n.t("import_save"), "", "", 64)
+	im.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	im.add_theme_font_size_override("font_size", 21)
+	im.pressed.connect(func():
+		var ok2 := SaveManager.import_code(DisplayServer.clipboard_get())
+		Audio.play("goal" if ok2 else "error")
+		im.text = I18n.t("imported") if ok2 else I18n.t("import_failed")
+	)
+	srow.add_child(im)
+	b.add_child(srow)
+	b.add_child(UI.wrap_label(I18n.t("save_transfer_hint"), 19, Palette.FAINT))
 	var ok := UI.button(I18n.t("close"), "AccentButton")
 	ok.pressed.connect(m.close)
-	b.add_child(ok)
+	m.body.add_child(ok)
 	parent.add_child(m)
 	return m
 

@@ -213,6 +213,46 @@ const T := {
 	"dlg_night_event_2": [["Konserden sonra eve taksiyle 400 lira verdim, gece seferi yok 😡", "Paid a fortune for a taxi after the concert, no night trains 😡", -0.7]],
 	"dlg_press_2": [["Gazete manşeti: 'Raylı sistemde kalabalık skandalı' 📰", "Headline: 'Crowding scandal on the rail network' 📰", -0.7]],
 	"dlg_seismic_1": [["Tüneller depreme karşı güçlendiriliyor, içimiz rahat 🏗️", "Tunnels are being reinforced against earthquakes, peace of mind 🏗️", 0.8]],
+	"flavor_eskisehir": [
+		["Porsuk kıyısında gondol, sonra tramvayla eve. Eskişehir çok yaşanılır 🚋", "A gondola on the Porsuk, then home by tram. Eskişehir is so liveable 🚋", 0.9],
+		["Öğrenci şehri = her yer tramvay dolu, ama seviyoruz 🎓 #Eskişehir", "Student city = trams always full, but we love it 🎓 #Eskisehir", 0.5],
+		["Odunpazarı'nın renkli evleri durağın hemen yanında, turistler bayılıyor", "Odunpazarı's colourful houses are right by the stop, tourists love it", 0.7],
+	],
+	"flavor_antalya": [
+		["Plaja raylı sistemle gitmek, otopark derdi yok 🏖️ #Antalya", "Taking rail to the beach, no parking stress 🏖️ #Antalya", 0.9],
+		["Yazın turist, kışın biz… şehir iki farklı şehir gibi ☀️", "Tourists in summer, locals in winter… two different cities ☀️", 0.4],
+		["Kaleiçi'nde gün batımı, sonra tramvayla Lara'ya 🌅", "Sunset in Kaleiçi, then the tram to Lara 🌅", 0.8],
+	],
+	"flavor_bursa": [
+		["Teleferikle Uludağ'a çıkmak, sonra İskender 😋 #Bursa", "Gondola up Uludağ, then İskender kebab 😋 #Bursa", 0.9],
+		["OSB vardiya çıkışı metro tıklım tıklım, ek sefer şart", "Metro is packed when the factory shift ends, we need more trains", -0.5],
+		["Yeşil Bursa'da arabasız yaşam mümkünmüş 🌳", "Car-free life is possible in green Bursa 🌳", 0.8],
+	],
+	"flavor_trabzon": [
+		["Boztepe'ye çıkıp çay içmek… manzara efsane ☕ #Trabzon", "Tea up on Boztepe… the view is legendary ☕ #Trabzon", 0.9],
+		["Sahil yolu tek, trafik bitmiyor. Raylı sistem şart! #Trabzon", "One coastal road, endless traffic. We need rail! #Trabzon", -0.5],
+		["Hamsi mevsimi geldi, Meydan'a herkes akın ediyor 🐟", "Anchovy season is here, everyone heads to Meydan 🐟", 0.7],
+	],
+	"con_start": [
+		["{line} inşaatı başladı! {n} ay sonra açılış bekleniyor 🏗️", "Construction of {line} has started! Opening expected in {n} months 🏗️", 0.4],
+		["Mahallemize {line} geliyor ama şantiye tozu çekilmez 😷", "{line} is coming to our neighbourhood but the construction dust is awful 😷", -0.2],
+	],
+	"con_overrun": [
+		["{line} inşaatında maliyet aşımı! Açılış {n} ay gecikecek 💸", "Cost overrun on {line}! Opening delayed by {n} months 💸", -0.6],
+	],
+	"modernized": [
+		["{line} yenilendi: yeni trenler, temiz vagonlar ✨", "{line} has been renewed: new trains, clean carriages ✨", 0.8],
+	],
+	"hub_open": [
+		["{station} artık dev bir aktarma merkezi. Aktarma 2 dakika! 🔁", "{station} is now a major interchange. Transfers in 2 minutes! 🔁", 0.8],
+	],
+	"rival": [
+		["Yeni bir paylaşımlı araç uygulaması çıktı, herkes onu deniyor 📱", "A new ride-hailing app launched, everyone is trying it 📱", -0.2],
+	],
+	"express": [
+		["{line} ekspres seferleri harika, şehrin bir ucundan öbürüne yarım saat ⚡", "{line} express is great, end to end in half an hour ⚡", 0.7],
+		["Ekspres benim durağımda durmuyor artık 😠 #{line}", "The express doesn't stop at my station anymore 😠 #{line}", -0.6],
+	],
 	"flavor_istanbul": [
 		["Martılar yine vapurun peşinde, simit atanlara selam 🐦 #İstanbul", "The gulls are chasing the ferry again, hi to everyone tossing simit 🐦 #Istanbul", 0.7],
 		["Boğaz'ın altından 4 dakikada karşıya geçmek… mühendislik harikası", "Crossing under the Bosphorus in 4 minutes… an engineering marvel", 0.8],

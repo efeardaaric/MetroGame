@@ -24,6 +24,8 @@ var _music: AudioStreamPlayer
 var _streams := {}
 var _next := 0
 var _last_play := {}
+var _moods := {}        # mood -> AudioStreamPlayer
+var _mood := "day"
 var _amb := {}          # loop name -> AudioStreamPlayer
 var _amb_target := {}   # loop name -> linear target volume
 var _amb_shot: AudioStreamPlayer
@@ -48,6 +50,20 @@ func _ready() -> void:
 			s.loop_begin = 0
 			s.loop_end = int(s.get_length() * s.mix_rate)
 		_music.stream = s
+	_moods["day"] = _music
+	for mood in ["night", "tense"]:
+		var path := "res://assets/audio/music_%s.wav" % mood
+		if ResourceLoader.exists(path):
+			var ms = load(path)
+			if ms is AudioStreamWAV:
+				ms.loop_mode = AudioStreamWAV.LOOP_FORWARD
+				ms.loop_begin = 0
+				ms.loop_end = int(ms.get_length() * ms.mix_rate)
+			var pl := AudioStreamPlayer.new()
+			pl.stream = ms
+			pl.volume_db = -80.0
+			add_child(pl)
+			_moods[mood] = pl
 	for n in AMB_LOOPS + AMB_SHOTS:
 		var path: String = AMB_DIR + n + ".ogg"
 		if ResourceLoader.exists(path):
@@ -93,7 +109,29 @@ func ambience_shot(name: String, level: float = 1.0, pitch: float = 1.0) -> void
 	p.play()
 
 
+## Dynamic soundtrack: cross-fades between day / night / tense loops.
+func set_music_mood(mood: String) -> void:
+	if _moods.has(mood):
+		_mood = mood
+
+
 func _process(delta: float) -> void:
+	var base := Settings.music_volume * 0.55
+	for mood in _moods.keys():
+		var pl: AudioStreamPlayer = _moods[mood]
+		if pl.stream == null or base <= 0.001:
+			continue
+		var target: float = base if mood == _mood else 0.0
+		var cur := db_to_linear(pl.volume_db) if pl.playing else 0.0
+		var nv := move_toward(cur, target, delta * base * 0.35)
+		if nv <= 0.001:
+			if pl.playing and mood != "day":
+				pl.stop()
+			pl.volume_db = -80.0
+			continue
+		if not pl.playing:
+			pl.play()
+		pl.volume_db = linear_to_db(nv)
 	for n in AMB_LOOPS:
 		var pl: AudioStreamPlayer = _amb[n]
 		if pl.stream == null:

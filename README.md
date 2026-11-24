@@ -44,6 +44,32 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
 - Ağır yolcu hesabı **arka plan thread'inde** çalışır → ağ büyüse de 60 FPS.
 - Özgün müzik ve ses efektleri (`tools/gen_audio.py` ile üretildi), özgün ikon/splash.
 
+### Derinlik paketi
+- **İnşaat süresi ve maliyet aşımı**: hatlar uzunluk/derinliğe göre 1–30 ay inşa edilir (haritada
+  vinç rozeti ve ilerleme halkası); açılıştan önce %22 ihtimalle maliyet aşımı + gecikme.
+  "Hızlandır" ile kalan süre yarıya iner. Uzatmalarda mevcut kısım çalışmaya devam eder.
+- **Ekspres sefer**: metro/banliyö/metrobüs/tramvayda ara durakların yarısını atlayan servis
+  (daha hızlı ama atlanan duraklardan yolcu binemez).
+- **Filo yaşlanması ve modernizasyon**: yaş arttıkça arıza ve gider artar.
+- **Aktarma merkezi**: aktarmayı hızlandırır, çevresine iş merkezi çeker.
+- **Kentsel gelişme**: yoğun istasyonların çevresi her yıl büyür (nüfus ve iş artar, haritada
+  yeni yapı adaları belirir).
+- **Rakip ulaşım**: paylaşımlı araç uygulaması yolcu çalar; kampanya, indirim ya da görmezden gelme.
+- **4 yeni şehir**: Eskişehir (tramvay şehri), Antalya (turizm sezonu), Bursa (Uludağ, kış kayak
+  sezonu), Trabzon (dar sahil şeridi) + yeni sistem **Teleferik**.
+- **Senaryo modu**: 8 tarihî/tematik bölüm (İlk Metro 1989, Boğaz'ın Altından 2004, Kampüs Hattı…)
+  süre sınırı ve 3 yıldızla.
+- **Haftalık meydan okuma**: herkes için aynı şehir ve 2 rastgele kural, 3 yılda en yüksek yolcu skoru.
+- **Metro şeması modu**: 45°/90° şematik görünüm, krem kâğıt zemin.
+- **Hava**: yağmur, sabah sisi (İstanbul/Trabzon/Bursa kışın), kar.
+- **Dinamik müzik**: gündüz / gece / kriz döngüleri arasında yumuşak geçiş.
+- **Konfeti** ve ilk sefer sesi hat açılışında; **ağ posteri** (1080×1350 PNG) ve paylaşım.
+- **Erişilebilirlik**: renk körü modu (hat desenleri), yazı boyutu, hareketi azalt; **otomatik
+  kalite** düşürme; **kayıt aktarımı** (kopyala/yapıştır kodu).
+- **Platform köprüsü**: Game Center / Play Games / native paylaşım (eklenti kurulumu: `docs/PLATFORM.md`).
+- **Mağaza materyalleri**: `docs/store/` içinde 4 boyutta ekran görüntüleri ve 17 sn tanıtım videosu
+  (`tools/store_media.tscn` ile yeniden üretilir).
+
 ### Görsel kimlik: "Bilet & Tabela"
 Türk şehir ulaşımından ilham alan özgün bir arayüz dili:
 - **Kalkış tabelası HUD'u**: tarih/saat, kasa, yolcu ve memnuniyet; siyah panel üstünde amber
