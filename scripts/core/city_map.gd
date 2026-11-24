@@ -4,7 +4,7 @@ extends RefCounted
 
 const KM_PER_DEG_LAT := 110.57
 const SAMPLES_PER_ZONE := 28
-const GRID_STEP := 0.5 # km, heatmap resolution
+const GRID_STEP := 0.15 # km, heatmap resolution (baked offline)
 
 var id: String
 var data: Dictionary
@@ -60,7 +60,7 @@ func _proj_list(pts: Array) -> PackedVector2Array:
 
 func _build_geometry() -> void:
 	for poly in data.get("water_polys", []):
-		water_polys.append(_proj_list(poly))
+		water_polys.append(smooth_closed(_proj_list(poly), 3))
 	for ch in data.get("channels", []):
 		var poly := _channel_poly(_proj_list(ch["pts"]), ch["w"])
 		if ch.get("river", false):
@@ -78,6 +78,32 @@ func _build_geometry() -> void:
 		divide = _proj_list(data["divide"])
 	for h in data.get("hills", []):
 		hills.append({"pos": project(h["lon"], h["lat"]), "h": h["h"], "r": h["r"]})
+
+
+## Chaikin corner cutting on a closed polygon → organic, curved coastlines.
+## Vertices far outside the map (frame corners) are kept sharp.
+func smooth_closed(poly: PackedVector2Array, iterations: int) -> PackedVector2Array:
+	var pts := poly
+	for _it in iterations:
+		var out := PackedVector2Array()
+		var n := pts.size()
+		for i in n:
+			var a := pts[i]
+			var b := pts[(i + 1) % n]
+			if not _inside_margin(a) and not _inside_margin(b):
+				out.append(a)
+				continue
+			if not _inside_margin(a):
+				out.append(a)
+			else:
+				out.append(a.lerp(b, 0.25))
+			out.append(a.lerp(b, 0.75))
+		pts = out
+	return pts
+
+
+func _inside_margin(p: Vector2) -> bool:
+	return p.x > -0.3 and p.y > -0.3 and p.x < size_km.x + 0.3 and p.y < size_km.y + 0.3
 
 
 func _channel_poly(center: PackedVector2Array, widths: Array) -> PackedVector2Array:
@@ -203,6 +229,11 @@ func is_near_water(p: Vector2, radius: float) -> bool:
 func elevation(p: Vector2) -> float:
 	if is_water(p):
 		return -32.0
+	return elevation_land(p)
+
+
+## Terrain height ignoring water (used for smooth hill shading under the vector sea).
+func elevation_land(p: Vector2) -> float:
 	var e := base_elev
 	for h in hills:
 		var d2: float = (p - h["pos"]).length_squared()
@@ -278,9 +309,6 @@ func build_heat_image(kind: String) -> Image:
 	for y in h:
 		for x in w:
 			var p := Vector2((x + 0.5) * GRID_STEP, (y + 0.5) * GRID_STEP)
-			if is_water(p):
-				vals[y * w + x] = -1.0
-				continue
 			var v := 0.0
 			for z in zones:
 				var amount: float = z["pop"] if kind == "pop" else z["jobs"]

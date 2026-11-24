@@ -74,6 +74,7 @@ func _on_zoom(z: float) -> void:
 	vehicles.zoom = z
 	draft.zoom = z
 	flavor.set_zoom(z)
+	map.set_zoom(z)
 	lights.set_zoom(z)
 
 

@@ -58,6 +58,14 @@ Türk şehir ulaşımından ilham alan özgün bir arayüz dili:
 - Karakterli başlık fontu **Bricolage Grotesque**; gövde metinde Nunito.
 - Palet: tünel lacivert, bilet kreması, vapur sarısı, tramvay kırmızısı, çini turkuaz, Boğaz mavisi.
 
+### Her zoom seviyesinde keskin harita
+- Deniz, nehir, kıyı ve adalar raster dokuların **üstünde vektör** olarak, zoom'a göre kalınlığı
+  ayarlanan kenar yumuşatmalı (anti-aliased) kenarlarla çizilir → kıyılar hiç basamaklanmaz.
+- Kıyı poligonları Chaikin algoritmasıyla yumuşatılır (köşeli değil, doğal kıvrımlı kıyılar).
+- Tepe gölgesi 100 m/piksel, ısı/yükseklik katmanları 150 m/piksel çözünürlükte pişirilir;
+  su maskesi içermedikleri için kenar artefaktı yoktur. Hepsi mipmap + doğrusal filtreyle
+  uzaklaştırmada da titremez. (Karşılaştırma: `docs/screenshots/17_zoom_before_after.png`)
+
 ### Şehre özel detaylar ve mekanikler
 - **İstanbul**: Boğaz ve Marmara üzerinde uçan martı sürüleri ve martı sesleri, dalga ambiyansı,
   vapur düdüğü, 15 Temmuz / FSM / Yavuz Sultan Selim / Galata köprüleri, Galata Kulesi, Kız Kulesi,
