@@ -17,3 +17,7 @@ Thumbs.db
 fastlane/screenshots/
 fastlane/report.xml
 fastlane/README.md
+
+# fastlane / bundler (local install)
+vendor/
+.bundle/
