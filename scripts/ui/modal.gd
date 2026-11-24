@@ -37,9 +37,17 @@ func _build(title: String, width: float) -> void:
 	panel.custom_minimum_size.x = width
 	center.add_child(panel)
 	body = UI.vbox(18)
+	var pat := Deco.CiniPattern.new()
+	pat.band = 200.0
+	panel.add_child(pat)
 	panel.add_child(body)
+	var stripe := Deco.LineStripe.new()
+	stripe.thickness = 6.0
+	stripe.custom_minimum_size = Vector2(180, 16)
+	stripe.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	body.add_child(stripe)
 	if title != "":
-		var t := UI.label(title, 38, Palette.TEXT, 900)
+		var t := UI.title(title, 40)
 		t.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		t.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 		body.add_child(t)

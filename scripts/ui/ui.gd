@@ -8,7 +8,9 @@ static func label(text: String, size: int = 26, color: Color = Palette.TEXT, wei
 	l.text = text
 	l.add_theme_font_size_override("font_size", size)
 	l.add_theme_color_override("font_color", color)
-	if weight != 650:
+	if weight >= 900:
+		l.add_theme_font_override("font", ThemeBuilder.display(800))
+	elif weight != 650:
 		l.add_theme_font_override("font", ThemeBuilder.font(weight))
 	l.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	return l
@@ -29,14 +31,18 @@ static func button(text: String, variation: String = "", icon_kind: String = "",
 	b.custom_minimum_size.y = min_h
 	b.focus_mode = Control.FOCUS_NONE
 	if icon_kind != "":
-		var ic := Icon.make(icon_kind, 34, Color("1b1405") if variation == "AccentButton" else Palette.TEXT)
+		var ic := Icon.make(icon_kind, 34, Palette.INK if variation == "AccentButton" else Palette.TEXT)
 		b.add_child(ic)
 		b.set_meta("icon", ic)
 		b.alignment = HORIZONTAL_ALIGNMENT_CENTER
 		# keep icon positioned at the left padding
-		b.resized.connect(func():
-			ic.position = Vector2(22, (b.size.y - ic.size.y) * 0.5)
-		)
+		var place := func():
+			var sb := b.get_theme_stylebox("normal")
+			var lip: float = sb.border_width_bottom if sb is StyleBoxFlat else 0.0
+			ic.position = Vector2(22, (b.size.y - lip - ic.size.y) * 0.5)
+		b.resized.connect(place)
+		b.button_down.connect(func(): ic.position.y += 5)
+		b.button_up.connect(place)
 		b.text = "      " + text if text != "" else ""
 	b.pressed.connect(func():
 		Audio.play("tap")
@@ -53,11 +59,21 @@ static func icon_button(icon_kind: String, size: float = 76.0, variation: String
 		b.theme_type_variation = variation
 	var ic := Icon.make(icon_kind, size * 0.48, icon_color)
 	ic.set_anchors_preset(Control.PRESET_FULL_RECT)
+	var lip := 0.0 if variation == "FlatButton" else 3.5
 	ic.offset_left = size * 0.26
-	ic.offset_top = size * 0.26
+	ic.offset_top = size * 0.26 - lip
 	ic.offset_right = -size * 0.26
-	ic.offset_bottom = -size * 0.26
+	ic.offset_bottom = -size * 0.26 - lip
 	b.add_child(ic)
+	if lip > 0.0:
+		b.button_down.connect(func():
+			ic.offset_top += 5.0
+			ic.offset_bottom += 5.0
+		)
+		b.button_up.connect(func():
+			ic.offset_top = size * 0.26 - lip
+			ic.offset_bottom = -size * 0.26 - lip
+		)
 	b.set_meta("icon", ic)
 	b.pressed.connect(func():
 		Audio.play("tap")
@@ -146,3 +162,25 @@ static func pop_in(c: Control, from_scale: float = 0.9) -> void:
 	var tw := c.create_tween().set_parallel(true).set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
 	tw.tween_property(c, "scale", Vector2.ONE, 0.28)
 	tw.tween_property(c, "modulate:a", 1.0, 0.18)
+
+
+## Big title in the display face.
+static func title(text: String, size: int = 40, color: Color = Palette.TEXT) -> Label:
+	var l := label(text, size, color)
+	l.add_theme_font_override("font", ThemeBuilder.display(800))
+	return l
+
+
+## A station-sign plate: coloured bar + label, used for section headings.
+static func plate(text: String, color: Color = Palette.ACCENT, size: int = 22) -> Control:
+	var p := PanelContainer.new()
+	var sb := ThemeBuilder.box(Palette.INK, 10, 0, Color.TRANSPARENT, 14, 6)
+	sb.border_width_left = 8
+	sb.border_color = color
+	p.add_theme_stylebox_override("panel", sb)
+	p.size_flags_horizontal = Control.SIZE_SHRINK_BEGIN
+	var l := label(text.to_upper(), size, Palette.CREAM)
+	l.add_theme_font_override("font", ThemeBuilder.display(800))
+	p.add_child(l)
+	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	return p

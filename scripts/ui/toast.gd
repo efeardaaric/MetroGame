@@ -53,11 +53,18 @@ func show_msg(text: String, kind: String = "info", seconds: float = 2.6) -> void
 			col = Palette.INFO
 			ic = "bird"
 	var p := PanelContainer.new()
-	p.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(0.08, 0.1, 0.15, 0.96), 24, 2, Color(col, 0.6), 20, 14, 10))
+	# ticket stub: cream paper with a coloured stub on the left
+	var sb := ThemeBuilder.box(Palette.CREAM, 16, 0, Color.TRANSPARENT, 18, 12, 10)
+	sb.border_width_left = 16
+	sb.border_width_bottom = 5
+	sb.border_color = col.darkened(0.1)
+	sb.border_blend = false
+	p.add_theme_stylebox_override("panel", sb)
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	var h := UI.hbox(14)
-	h.add_child(Icon.make(ic, 34, col))
-	var l := UI.wrap_label(text, 25, Palette.TEXT)
+	h.add_child(Icon.make(ic, 34, col.darkened(0.25)))
+	var l := UI.wrap_label(text, 25, Palette.INK)
+	l.add_theme_font_override("font", ThemeBuilder.font(750))
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	h.add_child(l)
 	p.add_child(h)

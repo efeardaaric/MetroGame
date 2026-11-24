@@ -44,6 +44,20 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
 - Ağır yolcu hesabı **arka plan thread'inde** çalışır → ağ büyüse de 60 FPS.
 - Özgün müzik ve ses efektleri (`tools/gen_audio.py` ile üretildi), özgün ikon/splash.
 
+### Görsel kimlik: "Bilet & Tabela"
+Türk şehir ulaşımından ilham alan özgün bir arayüz dili:
+- **Kalkış tabelası HUD'u**: tarih/saat, kasa, yolcu ve memnuniyet; siyah panel üstünde amber
+  nokta-matris LED rakamlar (Doto).
+- **Metro hattı şeklinde alt menü**: her sekme bir istasyon yuvarlağı; renkli hat bölümleriyle
+  birbirine bağlı, aktif istasyon vapur sarısı.
+- **Hat renk şeridi** motifi (kırmızı-mavi-turkuaz-sarı, beyaz istasyon noktalı) tüm panel,
+  pencere ve inşa çubuğu başlıklarında.
+- Panellerin üst bandında soluklaşan, prosedürel çizilmiş **çini (sekiz köşeli yıldız) deseni**.
+- **Basılabilir 3D tuşlar** (alt "dudak" ile; basınca çöker), **delikli bilet** şeklinde ana
+  menü butonları, **bilet koçanı** bildirimleri, **istasyon tabelası** şeklinde başlıklar ve şehir adları.
+- Karakterli başlık fontu **Bricolage Grotesque**; gövde metinde Nunito.
+- Palet: tünel lacivert, bilet kreması, vapur sarısı, tramvay kırmızısı, çini turkuaz, Boğaz mavisi.
+
 ### Şehre özel detaylar ve mekanikler
 - **İstanbul**: Boğaz ve Marmara üzerinde uçan martı sürüleri ve martı sesleri, dalga ambiyansı,
   vapur düdüğü, 15 Temmuz / FSM / Yavuz Sultan Selim / Galata köprüleri, Galata Kulesi, Kız Kulesi,
@@ -174,6 +188,7 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 - Müzik, ses efektleri, ikonlar: bu proje için üretilmiş özgün içerik.
 - Ortam sesleri (martı, dalga, trafik): OpenGameArt, **CC0** — ayrıntı `assets/audio/amb/CREDITS.md`.
 - Noto Emoji yazı tipi: SIL OFL 1.1 (`assets/fonts/NotoEmoji-OFL.txt`).
+- Bricolage Grotesque ve Doto yazı tipleri: SIL OFL 1.1 (`assets/fonts/*-OFL.txt`).
 
 ## Ekran görüntüleri
 
@@ -184,3 +199,4 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 | ![](docs/screenshots/07_bosphorus.png) | ![](docs/screenshots/08_social.png) | ![](docs/screenshots/09_ankara_snow.png) |
 | ![](docs/screenshots/10_night.png) | ![](docs/screenshots/11_tech.png) | ![](docs/screenshots/12_timelapse.png) |
 | ![](docs/screenshots/13_decision.png) | ![](docs/screenshots/14_incident.png) | ![](docs/screenshots/15_management.png) |
+| ![](docs/screenshots/16_build_landscape.png) | | |

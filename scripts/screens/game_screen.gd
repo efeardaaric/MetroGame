@@ -155,26 +155,28 @@ func _build_hud() -> void:
 	var row1 := UI.hbox(10)
 	row1.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	hud.add_child(row1)
-	var menu_b := UI.icon_button("menu", 76, "", Palette.TEXT)
-	menu_b.add_theme_stylebox_override("normal", ThemeBuilder.box(Color(0.1, 0.13, 0.19, 0.92), 24, 1, Palette.STROKE, 0, 0, 6))
+	var menu_b := UI.icon_button("menu", 76, "AccentButton", Palette.INK)
 	menu_b.pressed.connect(open_pause_menu)
 	row1.add_child(menu_b)
 	# date chip
-	var date_chip := UI.card("ChipPanel")
+	var date_chip := PanelContainer.new()
+	date_chip.add_theme_stylebox_override("panel", _board_box())
 	date_chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var dv := UI.vbox(4)
 	var dh := UI.hbox(8)
-	day_icon = Icon.make("sun", 28, Palette.ACCENT)
+	day_icon = Icon.make("sun", 28, Palette.LED)
+	day_icon.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	dh.add_child(day_icon)
-	date_label = UI.label("", 26, Palette.TEXT, 850)
+	date_label = _led_label(26)
 	dh.add_child(date_label)
 	dv.add_child(dh)
-	month_bar = UI.progress(0.0, Palette.ACCENT, 6.0)
+	month_bar = UI.progress(0.0, Palette.LED, 5.0)
 	dv.add_child(month_bar)
 	date_chip.add_child(dv)
 	row1.add_child(date_chip)
 	# speed control
-	var sp := UI.card("ChipPanel")
+	var sp := PanelContainer.new()
+	sp.add_theme_stylebox_override("panel", _board_box(6))
 	var sh := UI.hbox(2)
 	for i in 4:
 		var kind: String = ["pause", "play", "ff", "fff"][i]
@@ -225,15 +227,33 @@ func _build_hud() -> void:
 	hud.add_child(mission_chip)
 
 
+## Departure-board panel: near-black with a bezel.
+func _board_box(pad: int = 12) -> StyleBoxFlat:
+	var b := ThemeBuilder.box(Palette.BOARD, 16, 3, Color("2a3142"), pad, 6, 8)
+	b.border_width_bottom = 5
+	b.border_color = Color("232a39")
+	return b
+
+
+func _led_label(size: int) -> Label:
+	var l := UI.label("", size, Palette.LED)
+	l.add_theme_font_override("font", ThemeBuilder.led(850))
+	l.add_theme_color_override("font_outline_color", Color(1.0, 0.6, 0.05, 0.25))
+	l.add_theme_constant_override("outline_size", 6)
+	return l
+
+
 func _stat_chip(parent: Control, icon_kind: String, col: Color, cb: Callable) -> Label:
 	var chip := Button.new()
 	chip.focus_mode = Control.FOCUS_NONE
 	chip.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	chip.custom_minimum_size.y = 62
-	var st := ThemeBuilder.box(Color(0.1, 0.13, 0.19, 0.92), 22, 1, Palette.STROKE, 12, 6, 6)
+	var st := _board_box()
 	chip.add_theme_stylebox_override("normal", st)
 	chip.add_theme_stylebox_override("hover", st)
-	chip.add_theme_stylebox_override("pressed", ThemeBuilder.box(Palette.PANEL_3, 22, 1, Palette.STROKE, 12, 6, 6))
+	var stp := _board_box()
+	stp.bg_color = Color("161c28")
+	chip.add_theme_stylebox_override("pressed", stp)
 	chip.pressed.connect(cb)
 	var h := UI.hbox(8)
 	h.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -243,7 +263,7 @@ func _stat_chip(parent: Control, icon_kind: String, col: Color, cb: Callable) ->
 	var ic := Icon.make(icon_kind, 30, col)
 	ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	h.add_child(ic)
-	var l := UI.label("", 25, Palette.TEXT, 850)
+	var l := _led_label(27)
 	l.size_flags_vertical = Control.SIZE_SHRINK_CENTER
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	l.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
@@ -255,12 +275,45 @@ func _stat_chip(parent: Control, icon_kind: String, col: Color, cb: Callable) ->
 	return l
 
 
+var nav_roundels: Array = []
+var nav_active := -1
+
+
+## Bottom navigation drawn as a metro line: each tab is a station roundel.
+class RouteLine:
+	extends Control
+	var roundels: Array = []
+	func _ready() -> void:
+		mouse_filter = Control.MOUSE_FILTER_IGNORE
+	func _process(_d: float) -> void:
+		queue_redraw()
+	func _draw() -> void:
+		if roundels.size() < 2:
+			return
+		var pts := PackedVector2Array()
+		for r in roundels:
+			var c: Control = r
+			pts.append(c.get_global_rect().get_center() - get_global_rect().position)
+		var y := pts[0].y
+		draw_line(Vector2(pts[0].x, y), Vector2(pts[pts.size() - 1].x, y), Palette.INK, 16.0, true)
+		var n := pts.size() - 1
+		for i in n:
+			var col: Color = Palette.STRIPES[i % Palette.STRIPES.size()]
+			draw_line(Vector2(pts[i].x, y), Vector2(pts[i + 1].x, y), col, 8.0, true)
+
+
 func _build_nav() -> void:
 	nav = PanelContainer.new()
-	nav.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(0.09, 0.12, 0.18, 0.96), 32, 1, Palette.STROKE, 10, 8, 12))
+	var nsb := ThemeBuilder.box(Color(0.07, 0.11, 0.19, 0.97), 30, 2, Palette.STROKE, 8, 10, 14)
+	nsb.border_width_bottom = 6
+	nsb.border_color = Color(0.03, 0.05, 0.1, 1)
+	nav.add_theme_stylebox_override("panel", nsb)
 	root_ui.add_child(nav)
-	var h := UI.hbox(4)
+	var route := RouteLine.new()
+	nav.add_child(route)
+	var h := UI.hbox(0)
 	nav.add_child(h)
+	nav_roundels.clear()
 	var items := [
 		["build", "tab_build", func(): open_build_menu()],
 		["lines", "tab_lines", func(): open_lines()],
@@ -270,37 +323,73 @@ func _build_nav() -> void:
 		["bird", "tab_social", func(): open_social()],
 		["flask", "tab_tech", func(): open_tech()],
 	]
-	for it in items:
+	for idx in items.size():
+		var it: Array = items[idx]
 		var b := Button.new()
 		b.theme_type_variation = "FlatButton"
 		b.focus_mode = Control.FOCUS_NONE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size = Vector2(70, 104)
-		var v := UI.vbox(2)
+		b.custom_minimum_size = Vector2(64, 108)
+		b.add_theme_stylebox_override("hover", StyleBoxEmpty.new())
+		b.add_theme_stylebox_override("pressed", StyleBoxEmpty.new())
+		b.add_theme_stylebox_override("hover_pressed", StyleBoxEmpty.new())
+		var v := UI.vbox(4)
 		v.set_anchors_preset(Control.PRESET_FULL_RECT)
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
 		v.mouse_filter = Control.MOUSE_FILTER_IGNORE
-		var accent: bool = it[0] == "build"
-		var ic := Icon.make(it[0], 44, Palette.ACCENT if accent else Palette.TEXT)
+		var roundel := PanelContainer.new()
+		roundel.custom_minimum_size = Vector2(60, 60)
+		roundel.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		roundel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+		var ic := Icon.make(it[0], 32, Palette.INK)
 		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-		v.add_child(ic)
-		var l := UI.label(I18n.t(it[1]), 19, Palette.ACCENT if accent else Palette.MUTED, 800)
+		ic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+		roundel.add_child(ic)
+		roundel.set_meta("icon", ic)
+		v.add_child(roundel)
+		var l := UI.label(I18n.t(it[1]), 17, Palette.MUTED, 800)
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+		l.add_theme_font_override("font", ThemeBuilder.display(700))
+		roundel.set_meta("label", l)
 		v.add_child(l)
 		b.add_child(v)
+		nav_roundels.append(roundel)
 		if it[0] == "bird":
-			social_badge = UI.label("", 18, Color.WHITE, 900)
+			social_badge = UI.label("", 17, Color.WHITE, 900)
 			social_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-			social_badge.add_theme_stylebox_override("normal", ThemeBuilder.box(Palette.BAD, 14, 0, Color.TRANSPARENT, 8, 1))
-			social_badge.position = Vector2(48, 4)
+			social_badge.add_theme_stylebox_override("normal", ThemeBuilder.box(Palette.BAD, 14, 2, Palette.INK, 7, 1))
+			social_badge.position = Vector2(40, 0)
 			b.add_child(social_badge)
 		var cb: Callable = it[2]
+		b.button_down.connect(func(): UI.pop_in(roundel, 0.85))
 		b.pressed.connect(func():
 			Audio.play("tap")
 			Settings.vibrate(8)
 			cb.call()
 		)
 		h.add_child(b)
+	route.roundels = nav_roundels
+	_set_nav(nav_active)
+
+
+func _set_nav(idx: int) -> void:
+	nav_active = idx
+	for i in nav_roundels.size():
+		var r: PanelContainer = nav_roundels[i]
+		var active := i == idx
+		var col: Color = Palette.STRIPES[mini(i, Palette.STRIPES.size() - 1)] if i < 4 else Palette.STRIPES[i % 4]
+		var sb := ThemeBuilder.box(Palette.ACCENT if active else Palette.CREAM, 30, 5, Palette.INK if not active else Palette.CREAM, 0, 0)
+		if i == 0 and not active:
+			sb.bg_color = Palette.CREAM
+			sb.border_color = Palette.BAD
+		r.add_theme_stylebox_override("panel", sb)
+		var ic: Icon = r.get_meta("icon")
+		ic.set_color(Palette.INK)
+		var l: Label = r.get_meta("label")
+		l.add_theme_color_override("font_color", Palette.ACCENT if active else Palette.MUTED)
+		r.scale = Vector2.ONE * (1.12 if active else 1.0)
+		r.pivot_offset = Vector2(30, 30)
+		col = col
 
 
 func _build_build_bar() -> void:
@@ -310,6 +399,11 @@ func _build_build_bar() -> void:
 	root_ui.add_child(build_bar)
 	var v := UI.vbox(12)
 	build_bar.add_child(v)
+	var stripe := Deco.LineStripe.new()
+	stripe.thickness = 6.0
+	stripe.custom_minimum_size = Vector2(160, 14)
+	stripe.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(stripe)
 	build_hint = UI.wrap_label("", 23, Palette.MUTED)
 	v.add_child(build_hint)
 	var info := UI.hbox(12)
@@ -317,8 +411,11 @@ func _build_build_bar() -> void:
 	build_info_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	build_info_label.clip_text = true
 	info.add_child(build_info_label)
-	build_cost_label = UI.label("", 28, Palette.ACCENT, 900)
-	info.add_child(build_cost_label)
+	var cost_board := PanelContainer.new()
+	cost_board.add_theme_stylebox_override("panel", _board_box(14))
+	build_cost_label = _led_label(30)
+	cost_board.add_child(build_cost_label)
+	info.add_child(cost_board)
 	v.add_child(info)
 	var row := UI.hbox(10)
 	var cancel := UI.icon_button("close", 80, "", Palette.BAD)
@@ -583,6 +680,7 @@ func show_sheet(s: Sheet) -> void:
 	root_ui.add_child(s)
 	s.closed.connect(func():
 		if sheet == s:
+			_set_nav(-1)
 			sheet = null
 			if build_mode == "":
 				select_line(-1)
@@ -603,11 +701,13 @@ func open_build_menu() -> void:
 	if build_mode != "":
 		return
 	show_sheet(panels.build_sheet())
+	_set_nav(0)
 	_tutorial_event("build_menu")
 
 
 func open_lines() -> void:
 	show_sheet(panels.lines_sheet())
+	_set_nav(1)
 
 
 func open_line(lid: int) -> void:
@@ -626,15 +726,18 @@ func open_station(sid: int) -> void:
 
 func open_goals() -> void:
 	show_sheet(panels.goals_sheet())
+	_set_nav(3)
 
 
 func open_finance() -> void:
 	show_sheet(panels.finance_sheet())
+	_set_nav(4)
 
 
 func open_social() -> void:
 	show_sheet(panels.social_sheet())
 	_update_badge()
+	_set_nav(5)
 
 
 func _update_badge() -> void:
@@ -738,6 +841,7 @@ func _on_city_event(eid: String) -> void:
 
 func open_tech() -> void:
 	show_sheet(panels.tech_sheet())
+	_set_nav(6)
 
 
 func _on_tech_done(id: String) -> void:
@@ -755,6 +859,7 @@ func check_achievements(flags: Dictionary = {}) -> void:
 
 func open_layers() -> void:
 	show_sheet(panels.layers_sheet())
+	_set_nav(2)
 
 
 func set_overlay(kind: String) -> void:
@@ -982,7 +1087,7 @@ func _update_build_ui() -> void:
 	var n := draft_nodes.size()
 	build_info_label.text = "%s · %d %s · %.1f km" % [name, n, I18n.t("stations"), length]
 	build_cost_label.text = Geo.fmt_money(cost)
-	build_cost_label.add_theme_color_override("font_color", Palette.ACCENT if state.can_afford(cost) else Palette.BAD)
+	build_cost_label.add_theme_color_override("font_color", Palette.LED if state.can_afford(cost) else Palette.BAD)
 	depth_button.text = I18n.t("depth_deep_short") if build_deep else I18n.t("depth_shallow_short")
 	depth_button.add_theme_color_override("font_color", Palette.INFO if build_deep else Palette.TEXT)
 	finish_button.disabled = n < 2

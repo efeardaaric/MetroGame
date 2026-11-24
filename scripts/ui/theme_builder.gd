@@ -19,6 +19,53 @@ static func font(weight: int = 600) -> Font:
 	return fv
 
 
+static var _display_cache := {}
+static var _led_cache := {}
+
+
+## Characterful display face for titles and big numbers (Bricolage Grotesque, OFL).
+static func display(weight: int = 800) -> Font:
+	weight = clampi(weight, 200, 800)
+	if _display_cache.has(weight):
+		return _display_cache[weight]
+	var base: FontFile = load("res://assets/fonts/BricolageGrotesque.ttf")
+	if base.fallbacks.is_empty():
+		base.fallbacks = [load("res://assets/fonts/Nunito.ttf")]
+	var fv := FontVariation.new()
+	fv.base_font = base
+	var ts := TextServerManager.get_primary_interface()
+	fv.variation_opentype = {ts.name_to_tag("wght"): weight, ts.name_to_tag("opsz"): 48, ts.name_to_tag("wdth"): 92}
+	_display_cache[weight] = fv
+	return fv
+
+
+## Dot-matrix "departure board" face for the HUD (Doto, OFL).
+static func led(weight: int = 800) -> Font:
+	if _led_cache.has(weight):
+		return _led_cache[weight]
+	var base: FontFile = load("res://assets/fonts/Doto.ttf")
+	if base.fallbacks.is_empty():
+		base.fallbacks = [load("res://assets/fonts/Nunito.ttf")]
+	var fv := FontVariation.new()
+	fv.base_font = base
+	var ts := TextServerManager.get_primary_interface()
+	fv.variation_opentype = {ts.name_to_tag("wght"): weight, ts.name_to_tag("ROND"): 100}
+	fv.spacing_glyph = 1
+	_led_cache[weight] = fv
+	return fv
+
+
+## Tactile key: a coloured face sitting on a darker lip; pressed sinks into the lip.
+static func key3d(face: Color, lip: Color, pressed: bool = false, radius: int = 18, pad_h: int = 22, pad_v: int = 12) -> StyleBoxFlat:
+	var s := box(face, radius, 0, Color.TRANSPARENT, pad_h, pad_v)
+	s.border_color = lip
+	s.border_width_bottom = 2 if pressed else 7
+	s.content_margin_top = pad_v + (5 if pressed else 0)
+	s.content_margin_bottom = pad_v - (5 if pressed else 0) + 2
+	s.border_blend = false
+	return s
+
+
 static func box(color: Color, radius: int = 18, border: int = 0, border_color: Color = Color.TRANSPARENT,
 		pad_h: int = 16, pad_v: int = 10, shadow: int = 0) -> StyleBoxFlat:
 	var s := StyleBoxFlat.new()
@@ -48,47 +95,46 @@ static func build() -> Theme:
 	t.set_color("font_color", "Label", Palette.TEXT)
 	t.set_constant("line_spacing", "Label", 2)
 
-	# Buttons
-	var normal := box(Palette.PANEL_2, 20, 0, Color.TRANSPARENT, 22, 14)
-	var hover := box(Palette.PANEL_3, 20, 0, Color.TRANSPARENT, 22, 14)
-	var pressed := box(Palette.PANEL_3.darkened(0.15), 20, 0, Color.TRANSPARENT, 22, 14)
-	var disabled := box(Palette.PANEL_2.darkened(0.3), 20, 0, Color.TRANSPARENT, 22, 14)
-	var focus := StyleBoxEmpty.new()
-	t.set_stylebox("normal", "Button", normal)
-	t.set_stylebox("hover", "Button", hover)
-	t.set_stylebox("pressed", "Button", pressed)
-	t.set_stylebox("disabled", "Button", disabled)
-	t.set_stylebox("focus", "Button", focus)
-	t.set_stylebox("hover_pressed", "Button", pressed)
+	# Buttons — tactile keys
+	var face := Palette.PANEL_3
+	var lip := Palette.PANEL_3.darkened(0.45)
+	t.set_stylebox("normal", "Button", key3d(face, lip))
+	t.set_stylebox("hover", "Button", key3d(face.lightened(0.06), lip))
+	t.set_stylebox("pressed", "Button", key3d(face.darkened(0.08), lip, true))
+	t.set_stylebox("hover_pressed", "Button", key3d(face.darkened(0.08), lip, true))
+	t.set_stylebox("disabled", "Button", key3d(Palette.PANEL_2, Palette.PANEL_2.darkened(0.3)))
+	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	t.set_color("font_color", "Button", Palette.TEXT)
 	t.set_color("font_hover_color", "Button", Palette.TEXT)
 	t.set_color("font_pressed_color", "Button", Palette.ACCENT)
 	t.set_color("font_disabled_color", "Button", Palette.FAINT)
 	t.set_color("font_hover_pressed_color", "Button", Palette.ACCENT)
-	t.set_font("font", "Button", font(750))
+	t.set_font("font", "Button", display(700))
 	t.set_font_size("font_size", "Button", 26)
 	t.set_constant("h_separation", "Button", 10)
 
-	# Accent button variation
+	# Accent key: ferry yellow
 	t.add_type("AccentButton")
 	t.set_type_variation("AccentButton", "Button")
-	t.set_stylebox("normal", "AccentButton", box(Palette.ACCENT, 20, 0, Color.TRANSPARENT, 26, 16))
-	t.set_stylebox("hover", "AccentButton", box(Palette.ACCENT.lightened(0.1), 20, 0, Color.TRANSPARENT, 26, 16))
-	t.set_stylebox("pressed", "AccentButton", box(Palette.ACCENT_DARK, 20, 0, Color.TRANSPARENT, 26, 16))
-	t.set_stylebox("hover_pressed", "AccentButton", box(Palette.ACCENT_DARK, 20, 0, Color.TRANSPARENT, 26, 16))
-	t.set_stylebox("disabled", "AccentButton", box(Palette.ACCENT.darkened(0.55), 20, 0, Color.TRANSPARENT, 26, 16))
+	t.set_stylebox("normal", "AccentButton", key3d(Palette.ACCENT, Palette.ACCENT_DARK))
+	t.set_stylebox("hover", "AccentButton", key3d(Palette.ACCENT.lightened(0.08), Palette.ACCENT_DARK))
+	t.set_stylebox("pressed", "AccentButton", key3d(Palette.ACCENT.darkened(0.05), Palette.ACCENT_DARK, true))
+	t.set_stylebox("hover_pressed", "AccentButton", key3d(Palette.ACCENT.darkened(0.05), Palette.ACCENT_DARK, true))
+	t.set_stylebox("disabled", "AccentButton", key3d(Palette.ACCENT.darkened(0.55), Palette.ACCENT.darkened(0.7)))
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
-		t.set_color(c, "AccentButton", Color("1b1405"))
+		t.set_color(c, "AccentButton", Palette.INK)
 	t.set_color("font_disabled_color", "AccentButton", Color(0, 0, 0, 0.45))
-	t.set_font("font", "AccentButton", font(850))
+	t.set_font("font", "AccentButton", display(800))
 
-	# Danger button
+	# Danger key: tram red
 	t.add_type("DangerButton")
 	t.set_type_variation("DangerButton", "Button")
-	t.set_stylebox("normal", "DangerButton", box(Palette.BAD.darkened(0.25), 20, 0, Color.TRANSPARENT, 22, 14))
-	t.set_stylebox("hover", "DangerButton", box(Palette.BAD.darkened(0.1), 20, 0, Color.TRANSPARENT, 22, 14))
-	t.set_stylebox("pressed", "DangerButton", box(Palette.BAD.darkened(0.4), 20, 0, Color.TRANSPARENT, 22, 14))
-	t.set_stylebox("hover_pressed", "DangerButton", box(Palette.BAD.darkened(0.4), 20, 0, Color.TRANSPARENT, 22, 14))
+	var red := Palette.BAD.darkened(0.1)
+	t.set_stylebox("normal", "DangerButton", key3d(red, red.darkened(0.45)))
+	t.set_stylebox("hover", "DangerButton", key3d(red.lightened(0.08), red.darkened(0.45)))
+	t.set_stylebox("pressed", "DangerButton", key3d(red.darkened(0.08), red.darkened(0.45), true))
+	t.set_stylebox("hover_pressed", "DangerButton", key3d(red.darkened(0.08), red.darkened(0.45), true))
+	t.set_stylebox("disabled", "DangerButton", key3d(red.darkened(0.5), red.darkened(0.65)))
 
 	# Flat / ghost button
 	t.add_type("FlatButton")

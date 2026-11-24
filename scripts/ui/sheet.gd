@@ -47,17 +47,20 @@ func _build(title: String) -> void:
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
+	var pat := Deco.CiniPattern.new()
+	pat.band = 170.0
+	panel.add_child(pat)
 	var v := UI.vbox(14)
 	panel.add_child(v)
-	# grabber
-	var grab := ColorRect.new()
-	grab.color = Color(1, 1, 1, 0.18)
-	grab.custom_minimum_size = Vector2(64, 7)
-	grab.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	v.add_child(grab)
+	# route stripe instead of a plain grabber
+	var stripe := Deco.LineStripe.new()
+	stripe.thickness = 6.0
+	stripe.custom_minimum_size = Vector2(150, 16)
+	stripe.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	v.add_child(stripe)
 	header = UI.hbox(10)
 	v.add_child(header)
-	title_label = UI.label(title, 34, Palette.TEXT, 850)
+	title_label = UI.title(title, 36)
 	title_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	title_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
 	header.add_child(title_label)

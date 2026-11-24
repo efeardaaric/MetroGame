@@ -1,21 +1,31 @@
 class_name Palette
 extends RefCounted
-## Central colour palette.
+## "Bilet & Tabela" palette: deep tunnel navy, ticket cream, ferry yellow, tram red,
+## İznik turquoise and Bosphorus blue.
 
-const BG := Color("0f1622")
-const PANEL := Color(0.106, 0.141, 0.204, 0.96)
-const PANEL_2 := Color("243049")
-const PANEL_3 := Color("2e3b57")
-const STROKE := Color(1, 1, 1, 0.08)
-const TEXT := Color("eef2f7")
-const MUTED := Color("93a1b8")
-const FAINT := Color("5d6b82")
-const ACCENT := Color("ffb703")
-const ACCENT_DARK := Color("c98f00")
-const GOOD := Color("2ec4b6")
-const WARN := Color("ff9f1c")
-const BAD := Color("ef476f")
-const INFO := Color("4cc9f0")
+const BG := Color("0d1626")
+const PANEL := Color(0.078, 0.122, 0.2, 0.97)
+const PANEL_2 := Color("1b2a45")
+const PANEL_3 := Color("263a5e")
+const STROKE := Color(0.96, 0.92, 0.85, 0.09)
+const TEXT := Color("f5eedf")
+const MUTED := Color("a9b2c4")
+const FAINT := Color("6c7890")
+const ACCENT := Color("f6b42c")
+const ACCENT_DARK := Color("b47a0c")
+const GOOD := Color("1fb39e")
+const WARN := Color("f28c28")
+const BAD := Color("e2384f")
+const INFO := Color("4ba3e3")
+
+# Identity
+const CREAM := Color("f3ebdd")
+const CREAM_DARK := Color("d9ccb4")
+const INK := Color("14233d")
+const LED := Color("ffb21a")
+const LED_DIM := Color(1.0, 0.7, 0.1, 0.14)
+const BOARD := Color("0a0e16")
+const STRIPES := [Color("e2384f"), Color("1d72d8"), Color("1fb39e"), Color("f6b42c")]
 
 # Map
 const LAND := Color("efe9dd")

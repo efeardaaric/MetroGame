@@ -89,6 +89,12 @@ func _build_menu() -> void:
 	veil.stretch_mode = TextureRect.STRETCH_SCALE
 	veil.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	root.add_child(veil)
+	var pat := Deco.CiniPattern.new()
+	pat.band = 0.0
+	pat.cell = 72.0
+	pat.color = Color(Palette.CREAM, 0.045)
+	pat.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.add_child(pat)
 
 	var center := CenterContainer.new()
 	center.set_anchors_preset(Control.PRESET_FULL_RECT)
@@ -102,10 +108,24 @@ func _build_menu() -> void:
 	var logo := Logo.new()
 	logo.custom_minimum_size = Vector2(560, 110 if land else 170)
 	menu_box.add_child(logo)
-	var title := UI.label(I18n.t("app_title"), 80 if land else 96, Palette.TEXT, 1000)
+	# title as a station sign
+	var sign := PanelContainer.new()
+	var ssb := ThemeBuilder.box(Palette.INK, 22, 4, Palette.CREAM, 30, 10, 18)
+	ssb.border_width_bottom = 10
+	sign.add_theme_stylebox_override("panel", ssb)
+	var sv := UI.vbox(0)
+	var title := UI.title(I18n.t("app_title").to_upper(), 84 if land else 100, Palette.CREAM)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
-	menu_box.add_child(title)
-	var tag := UI.label(I18n.t("app_tagline"), 28, Palette.MUTED, 700)
+	sv.add_child(title)
+	var stripe := Deco.LineStripe.new()
+	stripe.thickness = 9.0
+	stripe.custom_minimum_size = Vector2(420, 22)
+	stripe.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	sv.add_child(stripe)
+	sign.add_child(sv)
+	menu_box.add_child(sign)
+	var tag := UI.label(I18n.t("app_tagline").to_upper(), 24, Palette.ACCENT, 800)
+	tag.add_theme_font_override("font", ThemeBuilder.display(700))
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	menu_box.add_child(tag)
 	menu_box.add_child(UI.gap(8 if land else 30))
@@ -114,22 +134,22 @@ func _build_menu() -> void:
 		var cname := I18n.t(CityData.get_city(last.trim_suffix("_sandbox"))["name_key"])
 		if last.ends_with("_sandbox"):
 			cname += " (" + I18n.t("sandbox") + ")"
-		var cont := UI.button("%s · %s" % [I18n.t("continue"), cname], "AccentButton", "play", 96)
+		var cont := Deco.ticket_button("%s · %s" % [I18n.t("continue"), cname], "play", Palette.STRIPES[0], 100)
 		cont.pressed.connect(func(): start_city.emit(last, false))
 		menu_box.add_child(cont)
-	var play := UI.button(I18n.t("play"), "" if last != "" else "AccentButton", "build" if last != "" else "play", 96)
+	var play := Deco.ticket_button(I18n.t("play"), "build" if last != "" else "play", Palette.STRIPES[1] if last != "" else Palette.STRIPES[0], 100)
 	play.pressed.connect(open_city_select)
 	menu_box.add_child(play)
 	var row := UI.hbox(14)
-	var htp := UI.button(I18n.t("how_to_play"), "", "info")
+	var htp := Deco.ticket_button(I18n.t("how_to_play"), "info", Palette.STRIPES[2], 84)
 	htp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	htp.pressed.connect(_show_help)
 	row.add_child(htp)
-	var st := UI.icon_button("gear", 84)
+	var st := UI.icon_button("gear", 84, "AccentButton", Palette.INK)
 	st.pressed.connect(func(): SettingsPanel.open(ui_layer, func(): _build_menu()))
 	row.add_child(st)
 	menu_box.add_child(row)
-	var ach := UI.button(I18n.t("achievements") + "  %d/%d" % [Achievements.unlocked().size(), Achievements.LIST.size()], "", "trophy")
+	var ach := Deco.ticket_button(I18n.t("achievements") + "  %d/%d" % [Achievements.unlocked().size(), Achievements.LIST.size()], "trophy", Palette.STRIPES[3], 84)
 	ach.pressed.connect(func(): AchievementBanner.open_list(ui_layer))
 	menu_box.add_child(ach)
 	var cr := UI.button(I18n.t("credits"), "FlatButton", "", 64)
@@ -224,7 +244,9 @@ func _city_card(cid: String) -> Control:
 	var d := CityData.get_city(cid)
 	var unlocked := SaveManager.is_unlocked(cid)
 	var card := PanelContainer.new()
-	card.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(0.1, 0.13, 0.2, 0.95), 30, 2, Color(d["accent"], 0.5), 20, 20, 12))
+	var csb := ThemeBuilder.box(Palette.PANEL_2, 28, 3, d["accent"], 20, 20, 14)
+	csb.border_width_bottom = 10
+	card.add_theme_stylebox_override("panel", csb)
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var v := UI.vbox(12)
 	card.add_child(v)
@@ -234,9 +256,16 @@ func _city_card(cid: String) -> Control:
 	prev.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	v.add_child(prev)
 	var h := UI.hbox(10)
-	var name := UI.label(I18n.t(d["name_key"]), 42, Palette.TEXT, 950)
-	name.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	h.add_child(name)
+	# city name as a metro station sign
+	var plate := PanelContainer.new()
+	var psb := ThemeBuilder.box(Palette.INK, 12, 0, Color.TRANSPARENT, 16, 4)
+	psb.border_width_left = 12
+	psb.border_color = d["accent"]
+	plate.add_theme_stylebox_override("panel", psb)
+	var name := UI.title(I18n.t(d["name_key"]).to_upper(), 40, Palette.CREAM)
+	plate.add_child(name)
+	h.add_child(plate)
+	h.add_child(UI.spacer())
 	var cs := SaveManager.city_stars(cid)
 	for i in 3:
 		h.add_child(Icon.make("star" if i < cs else "star_o", 34, Palette.ACCENT if i < cs else Palette.FAINT))
