@@ -34,6 +34,11 @@ var fps_label: Label
 var tutorial_panel: PanelContainer
 var social_badge: Label
 var ach_banner: AchievementBanner
+var mission_chip: Button
+var mission_label: Label
+var mission_bar: ProgressBar
+var _pending_decision := {}
+var _shake := 0.0
 var day_icon: Icon
 var snow: SnowOverlay
 var _amb_timer := 0.0
@@ -91,6 +96,11 @@ func _ready() -> void:
 	_rng.randomize()
 	state.event_started.connect(_on_city_event)
 	state.tech_completed.connect(_on_tech_done)
+	state.mgmt.dilemma_raised.connect(_on_dilemma)
+	state.mgmt.incident_started.connect(_on_incident)
+	state.mgmt.mission_changed.connect(_update_mission_chip)
+	state.mgmt.mission_result.connect(_on_mission_result)
+	state.mgmt.earthquake.connect(_on_quake)
 	ach_banner = AchievementBanner.new()
 	root_ui.add_child(ach_banner)
 	state.feed.post_added.connect(_on_post)
@@ -98,6 +108,7 @@ func _ready() -> void:
 		state.feed.post("no_network", {}, state, "citizen")
 		state.feed.post("no_network", {}, state, "citizen")
 	_update_badge()
+	_update_mission_chip()
 	state.year_ended.connect(_on_year_ended)
 	state.goals_changed.connect(_on_goals_changed)
 	state.bankrupt.connect(_on_bankrupt)
@@ -182,6 +193,36 @@ func _build_hud() -> void:
 	var sat_chip := _stat_chip(row2, "smile", Palette.GOOD, func(): open_goals())
 	sat_label = sat_chip
 	sat_icon = sat_chip.get_meta("icon")
+	# active mission strip
+	mission_chip = Button.new()
+	mission_chip.focus_mode = Control.FOCUS_NONE
+	mission_chip.custom_minimum_size.y = 58
+	var mst := ThemeBuilder.box(Color(0.11, 0.16, 0.27, 0.94), 20, 1, Color(Palette.INFO, 0.5), 12, 6, 6)
+	mission_chip.add_theme_stylebox_override("normal", mst)
+	mission_chip.add_theme_stylebox_override("hover", mst)
+	mission_chip.add_theme_stylebox_override("pressed", mst)
+	mission_chip.pressed.connect(func(): open_goals())
+	var mh := UI.hbox(10)
+	mh.set_anchors_preset(Control.PRESET_FULL_RECT)
+	mh.offset_left = 14
+	mh.offset_right = -14
+	mh.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	var mic := Icon.make("target", 28, Palette.INFO)
+	mic.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	mh.add_child(mic)
+	var mv := UI.vbox(3)
+	mv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	mv.alignment = BoxContainer.ALIGNMENT_CENTER
+	mission_label = UI.label("", 20, Palette.TEXT, 800)
+	mission_label.clip_text = true
+	mission_label.text_overrun_behavior = TextServer.OVERRUN_TRIM_ELLIPSIS
+	mv.add_child(mission_label)
+	mission_bar = UI.progress(0.0, Palette.INFO, 6.0)
+	mv.add_child(mission_bar)
+	mh.add_child(mv)
+	mission_chip.add_child(mh)
+	mission_chip.visible = false
+	hud.add_child(mission_chip)
 
 
 func _stat_chip(parent: Control, icon_kind: String, col: Color, cb: Callable) -> Label:
@@ -358,6 +399,11 @@ func _process(delta: float) -> void:
 	var sp := current_speed()
 	state.advance(delta, sp)
 	world.advance_day(delta, sp)
+	if _shake > 0.0:
+		_shake = maxf(0.0, _shake - delta)
+		world.camera.offset = Vector2(randf_range(-1, 1), randf_range(-1, 1)) * 26.0 * _shake / world.camera.zoom.x
+	elif world.camera.offset != Vector2.ZERO:
+		world.camera.offset = Vector2.ZERO
 	world.vehicles.speed = sp if sp > 0.0 else 0.0
 	_hud_timer += delta
 	if _hud_timer > 0.25:
@@ -612,6 +658,76 @@ func _on_post(p: Dictionary) -> void:
 		if txt.length() > 90:
 			txt = txt.substr(0, 88) + "…"
 		toast.show_msg("@%s: %s" % [p["who"]["handle"], txt], "social", 4.0)
+
+
+func _on_dilemma(ev: Dictionary) -> void:
+	# wait for other modals; show when free
+	_pending_decision = ev
+	call_deferred("_try_show_decision")
+
+
+func _try_show_decision() -> void:
+	if _pending_decision.is_empty() or state.mgmt.pending.is_empty():
+		return
+	if modal_count > 0 or build_mode != "":
+		get_tree().create_timer(1.0).timeout.connect(_try_show_decision)
+		return
+	var ev := _pending_decision
+	_pending_decision = {}
+	Audio.play("chime")
+	Settings.vibrate(30)
+	show_modal(panels.decision_modal(ev))
+
+
+func on_decision_done(result: String) -> void:
+	if result != "":
+		toast.show_msg(result, "info", 4.0)
+	if not state.mgmt.mission.is_empty() and state.mgmt.mission.get("_announced", false) == false:
+		state.mgmt.mission["_announced"] = true
+		toast.show_msg(I18n.t("mission_started") % state.mgmt.mission_text(state), "info", 4.5)
+	state.recompute_if_dirty()
+	_update_hud()
+	_update_mission_chip()
+	world.network.rebuild()
+	_refresh_live_sheet()
+
+
+func _on_incident(lid: int, kind: String) -> void:
+	if not state.net.lines.has(lid):
+		return
+	var l: Dictionary = state.net.lines[lid]
+	toast.show_msg(I18n.t("incident_toast") % [I18n.t("incident_" + kind), l["name"], int(l["incident"]["months"])], "error", 4.0)
+	Audio.play("error")
+	world.network.rebuild()
+
+
+func _on_quake(minor: bool) -> void:
+	_shake = 1.6 if not minor else 0.9
+	Settings.vibrate(400)
+	toast.show_msg(I18n.t("quake_minor_toast" if minor else "quake_major_toast"), "good" if minor else "error", 5.0)
+	world.network.rebuild()
+
+
+func _update_mission_chip() -> void:
+	if mission_chip == null:
+		return
+	var mg := state.mgmt
+	mission_chip.visible = not mg.mission.is_empty()
+	if mission_chip.visible:
+		mission_label.text = "%s · %d %s" % [mg.mission_text(state), int(mg.mission["months"]), I18n.t("months_short")]
+		mission_bar.value = mg.mission_progress(state)
+	if tutorial_panel:
+		_layout_tutorial()
+
+
+func _on_mission_result(ok: bool, m: Dictionary) -> void:
+	if ok:
+		toast.show_msg(I18n.t("mission_ok_toast") % Geo.fmt_money(m["reward"]), "star", 4.5)
+		Audio.play("goal")
+	else:
+		toast.show_msg(I18n.t("mission_fail_toast"), "error", 4.0)
+		Audio.play("error")
+	_update_hud()
 
 
 func _on_city_event(eid: String) -> void:
@@ -959,6 +1075,7 @@ func _refresh_live_sheet() -> void:
 
 func _on_month() -> void:
 	_update_hud()
+	_update_mission_chip()
 	check_achievements()
 	if state.debt_months > 0:
 		toast.show_msg(I18n.t("debt_warning") % (GameState.DEBT_MONTHS_LIMIT - state.debt_months), "error", 3.5)

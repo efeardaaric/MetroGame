@@ -182,6 +182,9 @@ func _draw_line(lid: int, dimmed: bool) -> void:
 	var l: Dictionary = net.lines[lid]
 	var m := TransitModes.get_mode(l["mode"])
 	var c := net.line_color(l)
+	if l.has("incident"):
+		_draw_incident(lid, l, c, m)
+		return
 	if dimmed:
 		c = c.lerp(Color(0.8, 0.8, 0.8), 0.6)
 		c.a = 0.55
@@ -209,6 +212,24 @@ func _draw_line(lid: int, dimmed: bool) -> void:
 			_draw_dashes(lid, c, w, screen_w(14.0), screen_w(9.0))
 		_:
 			draw_polyline(p, c, w, true)
+
+
+func _draw_incident(lid: int, l: Dictionary, c: Color, m: Dictionary) -> void:
+	var p: PackedVector2Array = paths[lid]
+	var w := screen_w(m["width"])
+	var closed: bool = float(l["incident"]["cap"]) <= 0.0
+	var base := c.lerp(Color(0.55, 0.55, 0.58), 0.75 if closed else 0.35)
+	draw_polyline(p, base, w, true)
+	_draw_dashes(lid, Palette.BAD if closed else Palette.WARN, w * 0.45, screen_w(10.0), screen_w(10.0))
+	# warning badge at the middle of the line
+	var cum: PackedFloat32Array = cums[lid]
+	var mid: Array = Geo.sample_polyline(p, cum, cum[cum.size() - 1] * 0.5)
+	var r := screen_w(15.0)
+	var pos: Vector2 = mid[0]
+	draw_circle(pos, r + screen_w(2.5), Color.WHITE)
+	draw_circle(pos, r, Palette.BAD if closed else Palette.WARN)
+	draw_line(pos + Vector2(0, -r * 0.5), pos + Vector2(0, r * 0.15), Color.WHITE, screen_w(3.5), true)
+	draw_circle(pos + Vector2(0, r * 0.5), screen_w(2.2), Color.WHITE)
 
 
 func _draw_dashes(lid: int, c: Color, w: float, dash: float, gap: float) -> void:

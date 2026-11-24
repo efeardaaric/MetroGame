@@ -69,6 +69,23 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
 - **Serbest mod**: sınırsız bütçe, iflas yok; ayrı kayıt yuvası, yıldız/başarım vermez.
 - **Durak adlandırma**: istediğin durağa kendi ismini ver.
 
+### Yönetim, kararlar ve görevler
+- **Karar kartları** (15 farklı ikilem, ayda ~%30 olasılık, oyunu duraklatır): sendika zammı (grev riski),
+  sinyal arızası, durak isim sponsorluğu, meclisten bilet indirimi baskısı, uluslararası hibe, deprem
+  güçlendirmesi, tünele su sızması, engelsiz erişim kampanyası, konser gecesi ek sefer, vandalizm,
+  müteahhit ortaklığı, basında eleştiri, başkanın meydan okuması… Her seçeneğin bedeli ve sosyal
+  medyada yankısı var.
+- **Hat olayları**: rastgele arızalar (bakım bütçesine bağlı), grevler, su baskını, deprem
+  (İstanbul/İzmir; güçlendirme yaptıysan hasarsız). Etkilenen hat haritada gri-kesikli ve uyarı
+  işaretli gösterilir; kapasite düşer ya da hat kapanır. Hat panelinden **acil onarım** yapılabilir.
+  Depremde kamera sarsılır.
+- **Süreli görevler**: "12 ayda yolcuyu %30 artır", "X semtine raylı sistem götür", "4 ay kalabalıksız",
+  "yeni bir sistem türü aç", "memnuniyeti 5 ay %70 üstünde tut". Ödül nakit; başarısızlık kamuoyunu düşürür.
+  Aktif görev HUD'da ilerleme şeridiyle görünür.
+- **Finans > Yönetim**: bilet fiyatı (%60–160, talep esnekliği + memnuniyet/kamuoyu etkisi),
+  bakım bütçesi (düşük/normal/yüksek → gider ve arıza sıklığı), hafta sonu 24 saat sefer,
+  personel maliyeti seviyesi, **banka kredisi** (5 yıl, %7 faiz, en fazla 2, erken ödeme).
+
 ### Sosyal medya: "Cıvıltı"
 Şehir halkı kararlarına sosyal ağda tepki verir: yeni hat açılışında sevinç gönderileri, havalimanı/
 kampüs bağlantılarına teşekkürler, kalabalık ve seyrek seferlere şikayetler (@rayagi_resmi etiketli),
@@ -166,3 +183,4 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 | ![](docs/screenshots/04_profile.png) | ![](docs/screenshots/05_cities_landscape.png) | ![](docs/screenshots/06_izmir_landscape.png) |
 | ![](docs/screenshots/07_bosphorus.png) | ![](docs/screenshots/08_social.png) | ![](docs/screenshots/09_ankara_snow.png) |
 | ![](docs/screenshots/10_night.png) | ![](docs/screenshots/11_tech.png) | ![](docs/screenshots/12_timelapse.png) |
+| ![](docs/screenshots/13_decision.png) | ![](docs/screenshots/14_incident.png) | ![](docs/screenshots/15_management.png) |

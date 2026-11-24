@@ -148,5 +148,32 @@ func _run() -> void:
 	g.show_modal(g.panels.timelapse_modal())
 	await wait(3.0)
 	await shot("18_timelapse")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	g.world.day_t = 0.45
+	var lid0: int = st.net.lines.keys()[0]
+	st.mgmt.set_incident(st, lid0, "breakdown", 0.5, 2)
+	st.mgmt.start_mission(st, "riders_growth")
+	g._update_mission_chip()
+	await wait(0.5)
+	g.cancel_build()
+	st.mgmt.pending = {"id": "union_wage"}
+	g._on_dilemma(st.mgmt.pending)
+	await wait(1.2)
+	await shot("19_decision")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	g.open_line(lid0)
+	await wait(0.8)
+	await shot("20_incident")
+	g.open_finance()
+	await wait(0.8)
+	g.sheet.scroll.scroll_vertical = 700
+	await wait(0.4)
+	await shot("21_management")
 	print("FPS ", Engine.get_frames_per_second())
 	get_tree().quit()

@@ -79,7 +79,8 @@ func line_hourly_capacity(line: Dictionary) -> float:
 	if line["vehicles"] <= 0:
 		return 0.0
 	var m := TransitModes.get_mode(line["mode"])
-	return m["capacity"] * 60.0 / line_headway_min(line) * TechData.mode_mult(tech, "capacity", line["mode"])
+	var inc_cap: float = float(line["incident"]["cap"]) if line.has("incident") else 1.0
+	return m["capacity"] * 60.0 / line_headway_min(line) * TechData.mode_mult(tech, "capacity", line["mode"]) * inc_cap
 
 
 func depot_capacity(line: Dictionary) -> int:

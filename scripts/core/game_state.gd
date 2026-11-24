@@ -42,6 +42,7 @@ var dirty := true
 var tutorial_step := 0
 var total_built := 0.0
 var feed := SocialFeed.new()
+var mgmt := Management.new()
 var researched: Array = []      # tech ids
 var research := {}              # {id, months, total} while a project runs
 var sandbox := false
@@ -67,8 +68,20 @@ func _init(id: String) -> void:
 
 ## Recomputes seasonal + event demand modifiers; marks demand dirty when they change.
 func _update_mods() -> void:
-	var m := CityEvents.combine(CityEvents.seasonal_mods(city, month), CityEvents.event_mods(active_events))
-	m = CityEvents.combine(m, TechData.demand_mods(researched))
+	var parts := [CityEvents.seasonal_mods(city, month), CityEvents.event_mods(active_events),
+		TechData.demand_mods(researched), mgmt.demand_mods()]
+	var m := {}
+	var sat_add := 0.0
+	var fare_pen := 0.0
+	for part in parts:
+		var p: Dictionary = part.duplicate(true)
+		sat_add += float(p.get("sat_add", 0.0))
+		fare_pen += float(p.get("fare_pen", 0.0))
+		p.erase("sat_add")
+		p.erase("fare_pen")
+		m = CityEvents.combine(m, p)
+	m["sat_add"] = sat_add
+	m["fare_pen"] = fare_pen
 	if m != demand.mods:
 		demand.mods = m
 		dirty = true
@@ -185,11 +198,11 @@ func monthly_grant() -> float:
 
 
 func monthly_income() -> float:
-	return riders * 30.0 * FARE * TechData.mult(researched, "fare") / 1_000_000.0
+	return riders * 30.0 * FARE * mgmt.effective_fare() * TechData.mult(researched, "fare") / 1_000_000.0
 
 
 func monthly_expense() -> float:
-	return net.total_annual_opex() / 12.0
+	return net.total_annual_opex() * mgmt.opex_mult() / 12.0 + mgmt.loan_payment()
 
 
 ## Advance the simulation by `delta` real seconds at the given speed multiplier.
@@ -237,6 +250,7 @@ func _end_month() -> void:
 		_end_year()
 	_tick_events()
 	_tick_research()
+	mgmt.monthly(self)
 	feed.monthly(self)
 
 
@@ -448,7 +462,7 @@ func to_dict() -> Dictionary:
 		"best_riders": best_riders, "game_over": game_over, "tutorial_step": tutorial_step,
 		"total_built": total_built, "network": net.to_dict(),
 		"feed": feed.to_dict(), "events": active_events,
-		"researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
+		"mgmt": mgmt.to_dict(), "researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
 	}
 
 
@@ -473,6 +487,7 @@ func from_dict(d: Dictionary) -> void:
 	city.grow(years_elapsed())
 	net.from_dict(d.get("network", {}))
 	feed.from_dict(d.get("feed", {}))
+	mgmt.from_dict(d.get("mgmt", {}))
 	researched.clear()
 	researched.append_array(d.get("researched", []))
 	research = d.get("research", {})

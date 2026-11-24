@@ -187,6 +187,28 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 	for c in grid.get_children():
 		c.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	content.add_child(grid)
+	if l.has("incident"):
+		var inc: Dictionary = l["incident"]
+		var ic := PanelContainer.new()
+		ic.add_theme_stylebox_override("panel", ThemeBuilder.box(Color("3a1d26"), 20, 2, Color(Palette.BAD, 0.6), 16, 12))
+		var iv := UI.vbox(8)
+		var ih := UI.hbox(10)
+		ih.add_child(Icon.make("warning", 34, Palette.BAD))
+		ih.add_child(UI.label(I18n.t("incident_status") % [I18n.t("incident_" + str(inc["kind"])), int(float(inc["cap"]) * 100.0), int(inc["months"])], 23, Palette.TEXT, 850))
+		iv.add_child(ih)
+		if st.mgmt.can_repair(st, lid):
+			var rc := st.mgmt.repair_cost(st, lid)
+			var rb := UI.button(I18n.t("emergency_repair") % Geo.fmt_money(rc), "DangerButton", "gear", 64)
+			rb.disabled = not st.can_afford(rc)
+			rb.pressed.connect(func():
+				if st.mgmt.repair(st, lid):
+					Audio.play("build")
+					gs.toast.show_msg(I18n.t("repaired"), "good")
+					_after_line_change(content, lid)
+			)
+			iv.add_child(rb)
+		ic.add_child(iv)
+		content.add_child(ic)
 	if m["underground"]:
 		content.add_child(UI.stat_row(I18n.t("tunnel_depth"), I18n.t("depth_deep") if l.get("deep", false) else I18n.t("depth_shallow")))
 
@@ -423,6 +445,8 @@ func goals_sheet() -> Sheet:
 	for i in 3:
 		sr.add_child(Icon.make("star" if i < stars else "star_o", 56, Palette.ACCENT if i < stars else Palette.FAINT))
 	s.body.add_child(sr)
+	if not st.mgmt.mission.is_empty():
+		s.body.add_child(mission_card())
 	var sg: Array = st.city.data["star_goals"]
 	s.body.add_child(UI.wrap_label("★ %s · ★★ %s · ★★★ %s" % [str(sg[0]), str(sg[1]), str(sg[2])], 20, Palette.FAINT))
 	var sat := st.demand.satisfaction
@@ -471,7 +495,10 @@ func _fill_finance(content: VBoxContainer) -> void:
 	content.add_child(UI.stat_row(I18n.t("expense_month"), "-" + Geo.fmt_money(exp), Palette.BAD))
 	content.add_child(HSeparator.new())
 	content.add_child(UI.stat_row(I18n.t("net_month"), ("+" if net >= 0 else "") + Geo.fmt_money(net), Palette.GOOD if net >= 0 else Palette.BAD))
+	if st.mgmt.loan_payment() > 0.0:
+		content.add_child(UI.stat_row(I18n.t("loan_payment"), "-" + Geo.fmt_money(st.mgmt.loan_payment()), Palette.WARN))
 	content.add_child(UI.stat_row(I18n.t("credit"), Geo.fmt_money(st.credit_limit())))
+	_management_section(content)
 	content.add_child(UI.wrap_label(I18n.t("grant_hint"), 20, Palette.FAINT))
 	var hist: Array = st.history.slice(maxi(0, st.history.size() - 24))
 	var rv: Array = []
@@ -493,6 +520,172 @@ func _fill_finance(content: VBoxContainer) -> void:
 	c2.formatter = func(v: float) -> String: return Geo.fmt_money(v)
 	c2.set_data(cv, lb, Palette.ACCENT, "line")
 	content.add_child(c2)
+
+
+func _management_section(content: VBoxContainer) -> void:
+	var st := _st()
+	var mg := st.mgmt
+	var card := UI.card()
+	var v := UI.vbox(12)
+	card.add_child(v)
+	var hh := UI.hbox(10)
+	hh.add_child(Icon.make("gear", 34, Palette.ACCENT))
+	hh.add_child(UI.label(I18n.t("mgmt_title"), 28, Palette.TEXT, 900))
+	v.add_child(hh)
+	# fare
+	var fr := UI.hbox(10)
+	var fl := UI.label(I18n.t("fare_policy"), 23, Palette.MUTED)
+	fl.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	fr.add_child(fl)
+	var fv := UI.label("%d%% · ₺%.1f" % [int(round(mg.fare * 100.0)), GameState.FARE * mg.fare], 24, Palette.ACCENT, 900)
+	fr.add_child(fv)
+	v.add_child(fr)
+	var sl := HSlider.new()
+	sl.min_value = 0.6
+	sl.max_value = 1.6
+	sl.step = 0.05
+	sl.value = mg.fare
+	sl.custom_minimum_size.y = 48
+	sl.focus_mode = Control.FOCUS_NONE
+	sl.value_changed.connect(func(val: float):
+		fv.text = "%d%% · ₺%.1f" % [int(round(val * 100.0)), GameState.FARE * val]
+	)
+	sl.drag_ended.connect(func(_changed: bool):
+		var old := mg.fare
+		mg.set_fare(st, sl.value)
+		Audio.play("cash", 1.0, -8.0)
+		var diff := mg.fare - old
+		if absf(diff) >= 0.1:
+			st.feed.bump(-diff * 12.0)
+			st.feed.post("fare_up" if diff > 0.0 else "fare_down", {"n": "%d" % int(round(mg.fare * 100.0))}, st, "citizen", 1.5)
+		gs._update_hud()
+	)
+	v.add_child(sl)
+	if not mg.fare_cap.is_empty():
+		v.add_child(UI.label(I18n.t("fare_capped") % [int(float(mg.fare_cap["mult"]) * 100.0), int(mg.fare_cap["months"])], 20, Palette.WARN, 800))
+	v.add_child(UI.wrap_label(I18n.t("fare_hint"), 19, Palette.FAINT))
+	v.add_child(HSeparator.new())
+	# maintenance
+	v.add_child(UI.label(I18n.t("maint_budget"), 23, Palette.MUTED))
+	var mr := UI.hbox(8)
+	for i in 3:
+		var b := UI.button(I18n.t("maint_%d" % i), "AccentButton" if mg.maint == i else "", "", 60)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.add_theme_font_size_override("font_size", 22)
+		b.pressed.connect(func():
+			mg.set_maint(st, i)
+			gs._refresh_live_sheet()
+		)
+		mr.add_child(b)
+	v.add_child(mr)
+	v.add_child(UI.wrap_label(I18n.t("maint_hint"), 19, Palette.FAINT))
+	v.add_child(HSeparator.new())
+	# night service
+	var nr := UI.hbox(10)
+	var nv := UI.vbox(2)
+	nv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	nv.add_child(UI.label(I18n.t("night_service"), 23, Palette.TEXT, 800))
+	nv.add_child(UI.wrap_label(I18n.t("night_hint"), 19, Palette.FAINT))
+	nr.add_child(nv)
+	var cb := CheckButton.new()
+	cb.button_pressed = mg.night
+	cb.focus_mode = Control.FOCUS_NONE
+	cb.toggled.connect(func(on: bool):
+		mg.set_night(st, on)
+		Audio.play("tap")
+	)
+	nr.add_child(cb)
+	v.add_child(nr)
+	v.add_child(UI.stat_row(I18n.t("wage_level"), "%d%%" % int(round(mg.wage * 100.0)), Palette.WARN if mg.wage > 1.0 else Palette.TEXT))
+	v.add_child(HSeparator.new())
+	# loans
+	v.add_child(UI.label(I18n.t("loans"), 23, Palette.MUTED))
+	for i in mg.loans.size():
+		var l: Dictionary = mg.loans[i]
+		var lr := UI.hbox(8)
+		var ll := UI.wrap_label(I18n.t("loan_row") % [Geo.fmt_money(l["principal"]), Geo.fmt_money(l["monthly"]), int(l["months"])], 20, Palette.TEXT)
+		ll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		lr.add_child(ll)
+		var rb := UI.button(I18n.t("repay") % Geo.fmt_money(mg.repay_cost(l)), "", "", 56)
+		rb.add_theme_font_size_override("font_size", 19)
+		rb.disabled = not st.can_afford(mg.repay_cost(l))
+		rb.pressed.connect(func():
+			if mg.repay(st, i):
+				Audio.play("cash")
+				gs._update_hud()
+				gs._refresh_live_sheet()
+		)
+		lr.add_child(rb)
+		v.add_child(lr)
+	if mg.loans.size() < Management.MAX_LOANS and not st.sandbox:
+		var tb := UI.button(I18n.t("take_loan") % Geo.fmt_money(mg.loan_amount(st)), "", "coin", 64)
+		tb.pressed.connect(func():
+			if mg.take_loan(st):
+				Audio.play("cash")
+				gs.toast.show_msg(I18n.t("loan_taken"), "money")
+				gs._update_hud()
+				gs._refresh_live_sheet()
+		)
+		v.add_child(tb)
+	v.add_child(UI.wrap_label(I18n.t("loan_hint"), 19, Palette.FAINT))
+	content.add_child(card)
+
+
+func mission_card() -> Control:
+	var st := _st()
+	var mg := st.mgmt
+	var card := PanelContainer.new()
+	card.add_theme_stylebox_override("panel", ThemeBuilder.box(Color("1d2a44"), 22, 2, Color(Palette.INFO, 0.6), 18, 14))
+	var v := UI.vbox(8)
+	var h := UI.hbox(10)
+	h.add_child(Icon.make("target", 36, Palette.INFO))
+	h.add_child(UI.label(I18n.t("mission_active"), 22, Palette.INFO, 900))
+	v.add_child(h)
+	v.add_child(UI.wrap_label(mg.mission_text(st), 25, Palette.TEXT))
+	v.add_child(UI.progress(mg.mission_progress(st), Palette.INFO, 10.0))
+	v.add_child(UI.label(I18n.t("mission_reward") % [Geo.fmt_money(mg.mission["reward"]), int(mg.mission["months"])], 20, Palette.ACCENT, 800))
+	card.add_child(v)
+	return card
+
+
+func decision_modal(ev: Dictionary) -> Modal:
+	var st := _st()
+	var id: String = ev["id"]
+	var d: Dictionary = Dilemmas.LIST[id]
+	var m := Modal.create("", 660.0, false)
+	var tag := UI.label(I18n.t("decision").to_upper(), 20, Palette.ACCENT, 900)
+	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	m.body.add_child(tag)
+	var ic := Icon.make(d.get("icon", "info"), 72, Palette.ACCENT)
+	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	m.body.add_child(ic)
+	var vars := st.mgmt.vars_of(st, ev)
+	var fill := func(t: String) -> String:
+		for k in vars.keys():
+			t = t.replace("{" + k + "}", str(vars[k]))
+		return t
+	var title := UI.label(fill.call(I18n.t("dlg_%s_t" % id)), 34, Palette.TEXT, 950)
+	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	title.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	m.body.add_child(title)
+	var body := UI.wrap_label(fill.call(I18n.t("dlg_%s_b" % id)), 24, Palette.MUTED)
+	body.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	m.body.add_child(body)
+	var opts: Array = d["options"]
+	for i in opts.size():
+		var b := UI.button(fill.call(I18n.t("dlg_%s_o%d" % [id, i + 1])), "AccentButton" if i == 0 else "", "", 80)
+		b.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+		b.add_theme_font_size_override("font_size", 23)
+		var cost: float = -float(opts[i].get("cash_g", 0.0)) * float(st.city.data["annual_grant"])
+		if cost > 0.0 and not st.can_afford(cost):
+			b.disabled = true
+		b.pressed.connect(func():
+			var res := st.mgmt.resolve(st, i)
+			m.close()
+			gs.on_decision_done(res)
+		)
+		m.body.add_child(b)
+	return m
 
 
 # ------------------------------------------------------------------ layers

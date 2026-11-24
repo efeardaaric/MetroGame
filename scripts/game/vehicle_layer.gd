@@ -37,6 +37,8 @@ func _draw() -> void:
 			continue
 		var l: Dictionary = net.lines[lid]
 		var n: int = l["vehicles"]
+		if l.has("incident"):
+			n = int(n * float(l["incident"]["cap"]))
 		if n <= 0:
 			continue
 		var p: PackedVector2Array = netlayer.paths[lid]

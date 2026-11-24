@@ -66,7 +66,8 @@ func compute() -> void:
 
 	var op_lines: Array = []
 	for l in net.lines.values():
-		if l["vehicles"] > 0 and l["stations"].size() >= 2:
+		var closed: bool = l.has("incident") and float(l["incident"]["cap"]) <= 0.0
+		if l["vehicles"] > 0 and l["stations"].size() >= 2 and not closed:
 			op_lines.append(l)
 			line_riders[l["id"]] = 0.0
 			var segs: int = l["stations"].size() - (0 if l.get("loop", false) else 1)
@@ -139,6 +140,7 @@ func compute() -> void:
 			j *= float(poi_m.get(z["poi_id"], 1.0)) * float(kind_m.get(z.get("kind", ""), 1.0))
 		jobs[i] = j
 	var car_mult: float = mods.get("car", 1.0)
+	var fare_pen: float = mods.get("fare_pen", 0.0)
 	var demand_mult: float = mods.get("demand", 1.0)
 	var attract_norm := PackedFloat32Array()
 	attract_norm.resize(nz)
@@ -189,7 +191,7 @@ func compute() -> void:
 						var net_t: float = spo["dist"][hub_of[sd]]
 						if net_t >= INF * 0.5:
 							continue
-						var tt: float = ao[1] + net_t + ad[1]
+						var tt: float = ao[1] + net_t + ad[1] + fare_pen
 						var share: float = MAX_SHARE / (1.0 + exp((tt - car_t) / 10.0 - 0.2))
 						var flow: float = trips * ao[0] * ad[0] * share
 						if flow < 0.5:

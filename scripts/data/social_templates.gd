@@ -169,6 +169,50 @@ const T := {
 		["Bu şehrin ulaşımı Avrupa'yı aratmıyor artık. {tech} 👏", "Our city's transit rivals Europe now. {tech} 👏", 0.8],
 		["{tech} güzel de bilet fiyatı artmasın yeter 😅", "{tech} is nice, just don't raise the fare 😅", 0.1],
 	],
+	"fare_up": [
+		["Bilete yine zam! Maaşlar aynı, ulaşım pahalı 😡 #zam", "Another fare hike! Wages stay the same, transit gets pricier 😡 #farehike", -0.9],
+		["Bu fiyatla arabayla gitmek daha mantıklı hale geldi", "At this price driving is starting to make more sense", -0.7],
+	],
+	"fare_down": [
+		["Bilet fiyatı düştü! Teşekkürler 🙏 #ucuzulaşım", "Fares went down! Thank you 🙏 #cheaptransit", 0.9],
+		["Ucuz bilet = daha çok yolcu. Doğru karar 👍", "Cheaper fares = more riders. Right call 👍", 0.7],
+	],
+	"inc_breakdown": [
+		["{line:da} arıza var, trenler yarım kapasite 😤 #arıza", "Breakdown on {line}, trains at half capacity 😤 #breakdown", -0.7],
+		["{line} yine arızalı, işe geç kaldım. Bakım nerede? @rayagi_resmi", "{line} broke down again, late for work. Where's the maintenance? @rayagi_resmi", -0.8],
+	],
+	"inc_strike": [
+		["Grev nedeniyle {line} seferleri yapılmıyor ✊ #grev", "{line} is not running due to a strike ✊ #strike", -0.6],
+		["Çalışanlar haklı ama {line} olmadan şehir felç 😩", "The workers have a point, but the city is paralysed without {line} 😩", -0.5],
+	],
+	"inc_flood": [
+		["{line} tünelini su bastı! Hat geçici olarak kapalı 🌊", "{line} tunnel flooded! The line is temporarily closed 🌊", -0.7],
+	],
+	"inc_fixed": [
+		["{line} hattındaki arıza giderildi, seferler normale döndü. Anlayışınız için teşekkürler.", "The fault on line {line} has been fixed, service is back to normal. Thanks for your patience.", 0.5],
+	],
+	"quake_minor": [
+		["Deprem hissedildi; güçlendirilmiş tüneller hasarsız atlattı. Ulaşım normal 👏", "An earthquake was felt; reinforced tunnels came through unharmed. Transit is running 👏", 0.6],
+	],
+	"quake_major": [
+		["Deprem sonrası bazı metro hatları kontrol için kapatıldı. Hasar tespiti sürüyor ⚠️", "After the earthquake some metro lines were closed for inspection. Damage assessment ongoing ⚠️", -0.6],
+	],
+	"mission_ok": [
+		["Belediye ulaşım işletmesinin hedefi zamanında tutturduğunu açıkladı 🎯", "The city announced the transit operator hit its target on time 🎯", 0.7],
+	],
+	"mission_fail": [
+		["Ulaşım işletmesi verdiği sözü tutamadı, meclis hesap soruyor", "The transit operator missed its promised target; the council demands answers", -0.6],
+	],
+	"dlg_union_wage_1": [["Ulaşım çalışanlarına zam geldi, hak ettiler 👏", "Transit workers got a raise, well deserved 👏", 0.6]],
+	"dlg_union_wage_3": [["Sendika ile müzakereler çöktü, grev kapıda mı?", "Talks with the union collapsed, is a strike coming?", -0.6]],
+	"dlg_sponsor_station_1": [["{station} durağına marka adı verilmiş… her şey satılık mı? 🙄", "{station} now carries a brand name… is everything for sale? 🙄", -0.4]],
+	"dlg_fare_cut_1": [["Bilet indirimi geldi! Cebimize nefes aldıran karar 💸", "Fare cut! A decision that lets our wallets breathe 💸", 0.9]],
+	"dlg_fare_cut_2": [["Bilet indirimi talebi reddedildi, vatandaş zor durumda", "The fare cut request was rejected, citizens are struggling", -0.6]],
+	"dlg_accessibility_1": [["Tüm istasyonlara asansör geliyor ♿ Engelsiz şehir!", "Elevators are coming to every station ♿ An accessible city!", 0.9]],
+	"dlg_night_event_1": [["Konser çıkışı gece seferleri vardı, harika organizasyon 🎶", "There were night trains after the concert, great organisation 🎶", 0.8]],
+	"dlg_night_event_2": [["Konserden sonra eve taksiyle 400 lira verdim, gece seferi yok 😡", "Paid a fortune for a taxi after the concert, no night trains 😡", -0.7]],
+	"dlg_press_2": [["Gazete manşeti: 'Raylı sistemde kalabalık skandalı' 📰", "Headline: 'Crowding scandal on the rail network' 📰", -0.7]],
+	"dlg_seismic_1": [["Tüneller depreme karşı güçlendiriliyor, içimiz rahat 🏗️", "Tunnels are being reinforced against earthquakes, peace of mind 🏗️", 0.8]],
 	"flavor_istanbul": [
 		["Martılar yine vapurun peşinde, simit atanlara selam 🐦 #İstanbul", "The gulls are chasing the ferry again, hi to everyone tossing simit 🐦 #Istanbul", 0.7],
 		["Boğaz'ın altından 4 dakikada karşıya geçmek… mühendislik harikası", "Crossing under the Bosphorus in 4 minutes… an engineering marvel", 0.8],

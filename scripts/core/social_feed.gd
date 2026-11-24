@@ -9,6 +9,7 @@ const MAX_POSTS := 80
 var posts: Array = []      # newest first
 var unread := 0
 var approval := 55.0       # public opinion 0..100
+var bias := 0.0            # temporary boost/penalty from management decisions (decays)
 var _rng := RandomNumberGenerator.new()
 var _cooldown := {}        # key -> months remaining
 var _next_id := 1
@@ -186,6 +187,11 @@ func text_of(p: Dictionary) -> String:
 	return p["tr"] if I18n.lang == "tr" else p["en"]
 
 
+func bump(x: float) -> void:
+	bias = clampf(bias + x, -30.0, 30.0)
+	_update_approval()
+
+
 func _update_approval() -> void:
 	var wsum := 0.0
 	var ssum := 0.0
@@ -197,8 +203,8 @@ func _update_approval() -> void:
 		var w := sqrt(float(p["likes"]) + 1.0) * (1.0 - n * 0.015)
 		wsum += w
 		ssum += w * float(p["sent"])
-	if wsum > 0.0:
-		approval = clampf(50.0 + 50.0 * ssum / wsum, 0.0, 100.0)
+	var base := 50.0 + (50.0 * ssum / wsum if wsum > 0.0 else 5.0)
+	approval = clampf(base + bias, 0.0, 100.0)
 
 
 func trending(limit: int = 4) -> Array:
@@ -306,6 +312,8 @@ func on_archaeology(state: GameState, lid: int) -> void:
 
 ## Called every in-game month.
 func monthly(state: GameState) -> void:
+	bias *= 0.88
+	_update_approval()
 	for k in _cooldown.keys():
 		_cooldown[k] = int(_cooldown[k]) - 1
 		if _cooldown[k] <= 0:
@@ -370,7 +378,7 @@ func monthly(state: GameState) -> void:
 # ------------------------------------------------------------------ persistence
 
 func to_dict() -> Dictionary:
-	return {"posts": posts.slice(0, 50), "approval": approval, "next": _next_id, "complained": _complained.keys()}
+	return {"posts": posts.slice(0, 50), "approval": approval, "bias": bias, "next": _next_id, "complained": _complained.keys()}
 
 
 func from_dict(d: Dictionary) -> void:
@@ -380,6 +388,7 @@ func from_dict(d: Dictionary) -> void:
 		p["likes"] = int(p["likes"])
 		p["reposts"] = int(p["reposts"])
 	approval = d.get("approval", 55.0)
+	bias = d.get("bias", 0.0)
 	_next_id = int(d.get("next", posts.size() + 1))
 	_complained.clear()
 	for k in d.get("complained", []):
