@@ -8,6 +8,9 @@ var _busy := false
 
 
 func _ready() -> void:
+	# Touch scrolling: controls inside any ScrollContainer must let drags through,
+	# otherwise a finger resting on a button/card can never scroll the list.
+	get_tree().node_added.connect(_on_node_added)
 	var theme := ThemeBuilder.build()
 	ThemeDB.get_default_theme().merge_with(theme)
 	ThemeDB.fallback_font = ThemeBuilder.font(650)
@@ -34,6 +37,27 @@ func _ready() -> void:
 	else:
 		_show_menu()
 	create_tween().tween_property(fade, "color:a", 0.0, 0.6)
+
+
+func _on_node_added(n: Node) -> void:
+	if n is ScrollContainer:
+		var sc := n as ScrollContainer
+		sc.scroll_deadzone = 12
+		sc.follow_focus = false
+		return
+	if not (n is Control):
+		return
+	var c := n as Control
+	if c.mouse_filter != Control.MOUSE_FILTER_STOP:
+		return
+	var p := n.get_parent()
+	while p != null and not (p is Viewport):
+		if p is ScrollContainer:
+			c.mouse_filter = Control.MOUSE_FILTER_PASS
+			return
+		if p is CanvasLayer:
+			return
+		p = p.get_parent()
 
 
 ## Keeps UI at the same physical size in portrait and landscape by swapping the base resolution.

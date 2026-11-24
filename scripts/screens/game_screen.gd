@@ -1307,8 +1307,40 @@ func _on_ridership() -> void:
 
 func _refresh_live_sheet() -> void:
 	if is_instance_valid(sheet) and sheet.has_meta("live"):
+		# don't rebuild under a finger that is scrolling/tapping the sheet
+		if _touching_sheet():
+			_live_pending = true
+			return
+		var sc := sheet.scroll
+		var keep := sc.scroll_vertical
 		var cb: Callable = sheet.get_meta("live")
 		cb.call()
+		# restore the scroll position once the new content has been laid out
+		sc.scroll_vertical = keep
+		await get_tree().process_frame
+		if is_instance_valid(sc):
+			sc.scroll_vertical = keep
+
+
+var _live_pending := false
+var _touch_down := false
+
+
+func _touching_sheet() -> bool:
+	return _touch_down and is_instance_valid(sheet)
+
+
+func _input(event: InputEvent) -> void:
+	if event is InputEventScreenTouch:
+		_touch_down = event.pressed
+		if not event.pressed and _live_pending:
+			_live_pending = false
+			call_deferred("_refresh_live_sheet")
+	elif event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT and event.device != InputEvent.DEVICE_ID_EMULATION:
+		_touch_down = event.pressed
+		if not event.pressed and _live_pending:
+			_live_pending = false
+			call_deferred("_refresh_live_sheet")
 
 
 func _on_month() -> void:
