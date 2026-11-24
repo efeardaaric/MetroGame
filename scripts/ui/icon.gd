@@ -163,6 +163,37 @@ func _draw() -> void:
 		"home":
 			draw_colored_polygon(PackedVector2Array([p.call(0.5, 0.18), p.call(0.85, 0.5), p.call(0.15, 0.5)]), c)
 			draw_rect(Rect2(p.call(0.25, 0.48), Vector2(0.5, 0.34) * s), c)
+		"heart":
+			var hp := PackedVector2Array()
+			for k in 33:
+				var a := TAU * k / 32.0
+				var x := 16.0 * pow(sin(a), 3)
+				var y := -(13.0 * cos(a) - 5.0 * cos(2 * a) - 2.0 * cos(3 * a) - cos(4 * a))
+				hp.append(o + (Vector2(0.5, 0.48) + Vector2(x, y) / 38.0) * s)
+			draw_colored_polygon(hp, c)
+		"repost":
+			draw_polyline(PackedVector2Array([p.call(0.2, 0.55), p.call(0.2, 0.3), p.call(0.72, 0.3)]), c, lw, true)
+			draw_colored_polygon(PackedVector2Array([p.call(0.68, 0.18), p.call(0.85, 0.3), p.call(0.68, 0.42)]), c)
+			draw_polyline(PackedVector2Array([p.call(0.8, 0.45), p.call(0.8, 0.7), p.call(0.28, 0.7)]), c, lw, true)
+			draw_colored_polygon(PackedVector2Array([p.call(0.32, 0.58), p.call(0.15, 0.7), p.call(0.32, 0.82)]), c)
+		"bird":
+			var body := PackedVector2Array([p.call(0.12, 0.45), p.call(0.3, 0.62), p.call(0.55, 0.72), p.call(0.8, 0.55),
+				p.call(0.9, 0.3), p.call(0.78, 0.35), p.call(0.7, 0.22), p.call(0.55, 0.3), p.call(0.5, 0.48), p.call(0.3, 0.5)])
+			draw_colored_polygon(body, c)
+			draw_circle(p.call(0.72, 0.34), s * 0.03, Palette.BG)
+		"frown":
+			draw_arc(p.call(0.5, 0.5), s * 0.38, 0, TAU, 32, c, lw * 0.8, true)
+			draw_circle(p.call(0.37, 0.42), s * 0.05, c)
+			draw_circle(p.call(0.63, 0.42), s * 0.05, c)
+			draw_arc(p.call(0.5, 0.78), s * 0.2, PI + 0.5, TAU - 0.5, 12, c, lw * 0.8, true)
+		"neutral":
+			draw_arc(p.call(0.5, 0.5), s * 0.38, 0, TAU, 32, c, lw * 0.8, true)
+			draw_circle(p.call(0.37, 0.42), s * 0.05, c)
+			draw_circle(p.call(0.63, 0.42), s * 0.05, c)
+			draw_line(p.call(0.36, 0.64), p.call(0.64, 0.64), c, lw * 0.8, true)
+		"megaphone":
+			draw_colored_polygon(PackedVector2Array([p.call(0.15, 0.4), p.call(0.35, 0.4), p.call(0.8, 0.18), p.call(0.8, 0.82), p.call(0.35, 0.6), p.call(0.15, 0.6)]), c)
+			draw_line(p.call(0.3, 0.6), p.call(0.38, 0.85), c, lw, true)
 		_:
 			draw_circle(p.call(0.5, 0.5), s * 0.3, c)
 

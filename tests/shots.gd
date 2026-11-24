@@ -115,5 +115,20 @@ func _run() -> void:
 		"profit": 2400.0, "operating_profit": 600.0, "riders": st.riders, "satisfaction": 71.0, "coverage": 0.12, "cash": st.cash, "lines": 4, "stations": 20})
 	await wait(1.0)
 	await shot("13_year_report")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	z = 0.32
+	g.world.camera.position = st.city.project(29.035, 41.06) * MapLayer.PX
+	g.world.camera.zoom = Vector2(z, z)
+	g.world._on_zoom(z)
+	await wait(1.5)
+	await shot("14_bosphorus")
+	for i in 6:
+		st.feed.monthly(st)
+	g.open_social()
+	await wait(1.0)
+	await shot("15_social")
 	print("FPS ", Engine.get_frames_per_second())
 	get_tree().quit()

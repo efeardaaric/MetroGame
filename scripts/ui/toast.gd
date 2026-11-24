@@ -49,6 +49,9 @@ func show_msg(text: String, kind: String = "info", seconds: float = 2.6) -> void
 		"star":
 			col = Palette.ACCENT
 			ic = "star"
+		"social":
+			col = Palette.INFO
+			ic = "bird"
 	var p := PanelContainer.new()
 	p.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(0.08, 0.1, 0.15, 0.96), 24, 2, Color(col, 0.6), 20, 14, 10))
 	p.mouse_filter = Control.MOUSE_FILTER_IGNORE

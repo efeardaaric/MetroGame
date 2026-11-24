@@ -32,6 +32,7 @@ var satisfaction := 70.0
 var crowded_lines := 0
 var debug := false
 var city_scale := 1.0
+var mods := {}  # seasonal / event modifiers, see CityEvents
 var debug_rows: Array = []
 
 
@@ -127,6 +128,18 @@ func compute() -> void:
 
 	# ---- gravity demand
 	var nz := city.zones.size()
+	var jobs := PackedFloat32Array()
+	jobs.resize(nz)
+	var poi_m: Dictionary = mods.get("poi", {})
+	var kind_m: Dictionary = mods.get("kind", {})
+	for i in nz:
+		var z: Dictionary = city.zones[i]
+		var j: float = z["jobs"]
+		if z["poi_id"] != "":
+			j *= float(poi_m.get(z["poi_id"], 1.0)) * float(kind_m.get(z.get("kind", ""), 1.0))
+		jobs[i] = j
+	var car_mult: float = mods.get("car", 1.0)
+	var demand_mult: float = mods.get("demand", 1.0)
 	var attract_norm := PackedFloat32Array()
 	attract_norm.resize(nz)
 	for i in nz:
@@ -134,7 +147,7 @@ func compute() -> void:
 		for j in nz:
 			if i == j:
 				continue
-			s += city.zones[j]["jobs"] * _impedance(city.zones[i]["pos"].distance_to(city.zones[j]["pos"]))
+			s += jobs[j] * _impedance(city.zones[i]["pos"].distance_to(city.zones[j]["pos"]))
 		attract_norm[i] = max(s, 0.0001)
 
 	# pass 1 & 2 (capacity restraint)
@@ -155,7 +168,7 @@ func compute() -> void:
 			var zi: Dictionary = city.zones[i]
 			if zi["pop"] <= 0.0 or access[i].is_empty():
 				continue
-			var produced: float = zi["pop"] * 1000.0 * TRIP_RATE * DEMAND_SCALE * city_scale
+			var produced: float = zi["pop"] * 1000.0 * TRIP_RATE * DEMAND_SCALE * city_scale * demand_mult
 			for j in nz:
 				if i == j or access[j].is_empty():
 					continue
@@ -163,9 +176,9 @@ func compute() -> void:
 				var dist: float = zi["pos"].distance_to(zj["pos"])
 				if dist < 1.2:
 					continue
-				var trips: float = produced * zj["jobs"] * _impedance(dist) / attract_norm[i]
+				var trips: float = produced * jobs[j] * _impedance(dist) / attract_norm[i]
 				# both directions: return trips counted from the other side automatically
-				var car_t := dist * 1.3 / car_speed * 60.0 + car_overhead
+				var car_t := (dist * 1.3 / car_speed * 60.0 + car_overhead) * car_mult
 				for so in access[i].keys():
 					var ao: Array = access[i][so]
 					var spo: Dictionary = sp[so]
@@ -282,9 +295,12 @@ func _build_graph(op_lines: Array) -> Dictionary:
 				hub_of[sid] = node_count
 				node_count += 1
 				adj.append([])
+	var speed_m: Dictionary = mods.get("speed", {})
+	var comfort_m: Dictionary = mods.get("comfort", {})
 	for l in op_lines:
 		var lid: int = l["id"]
 		var m := TransitModes.get_mode(l["mode"])
+		var spd: float = m["speed"] * float(speed_m.get(l["mode"], 1.0))
 		var wait: float = min(net.line_headway_min(l) * 0.5, 15.0)
 		var st: Array = l["stations"]
 		var route_nodes: Array = []
@@ -297,12 +313,12 @@ func _build_graph(op_lines: Array) -> Dictionary:
 			adj[rn].append([hub_of[sid], TRANSFER_PENALTY * 0.5, 1, lid, sid])
 		var n := st.size()
 		var segs := n if l.get("loop", false) else n - 1
-		var comfort: float = m["comfort"]
+		var comfort: float = m["comfort"] * float(comfort_m.get(l["mode"], 1.0))
 		for k in segs:
 			var a: int = k
 			var b: int = (k + 1) % n
 			var d: float = net.stations[st[a]]["pos"].distance_to(net.stations[st[b]]["pos"])
-			var t: float = (d / m["speed"] * 60.0 + m["dwell_min"]) / comfort
+			var t: float = (d / spd * 60.0 + m["dwell_min"]) / comfort
 			adj[route_nodes[a]].append([route_nodes[b], t, 2, lid, k * 2])
 			adj[route_nodes[b]].append([route_nodes[a], t, 2, lid, k * 2 + 1])
 	# walking transfers between nearby stations

@@ -32,6 +32,11 @@ var depth_button: Button
 var finish_button: Button
 var fps_label: Label
 var tutorial_panel: PanelContainer
+var social_badge: Label
+var snow: SnowOverlay
+var _amb_timer := 0.0
+var _rng := RandomNumberGenerator.new()
+var _last_viral_toast := -100000
 
 var speed_idx := 1
 var modal_count := 0
@@ -42,6 +47,7 @@ var draft_nodes: Array = []
 var draft_extend := -1
 var draft_at_start := false
 var draft_eval := {}
+var draft_nodes_committed: Array = []
 var overlay := "none"
 var _hud_timer := 0.0
 var _autosave := 0.0
@@ -77,6 +83,16 @@ func _ready() -> void:
 	fps_label.position = Vector2(12, 240)
 	root_ui.add_child(fps_label)
 
+	snow = SnowOverlay.new()
+	root_ui.add_child(snow)
+	root_ui.move_child(snow, 0)
+	_rng.randomize()
+	state.event_started.connect(_on_city_event)
+	state.feed.post_added.connect(_on_post)
+	if state.feed.posts.is_empty():
+		state.feed.post("no_network", {}, state, "citizen")
+		state.feed.post("no_network", {}, state, "citizen")
+	_update_badge()
 	state.year_ended.connect(_on_year_ended)
 	state.goals_changed.connect(_on_goals_changed)
 	state.bankrupt.connect(_on_bankrupt)
@@ -204,13 +220,14 @@ func _build_nav() -> void:
 		["layers", "tab_map", func(): open_layers()],
 		["target", "tab_goals", func(): open_goals()],
 		["chart", "tab_finance", func(): open_finance()],
+		["bird", "tab_social", func(): open_social()],
 	]
 	for it in items:
 		var b := Button.new()
 		b.theme_type_variation = "FlatButton"
 		b.focus_mode = Control.FOCUS_NONE
 		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-		b.custom_minimum_size = Vector2(96, 104)
+		b.custom_minimum_size = Vector2(80, 104)
 		var v := UI.vbox(2)
 		v.set_anchors_preset(Control.PRESET_FULL_RECT)
 		v.alignment = BoxContainer.ALIGNMENT_CENTER
@@ -223,6 +240,12 @@ func _build_nav() -> void:
 		l.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 		v.add_child(l)
 		b.add_child(v)
+		if it[0] == "bird":
+			social_badge = UI.label("", 18, Color.WHITE, 900)
+			social_badge.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+			social_badge.add_theme_stylebox_override("normal", ThemeBuilder.box(Palette.BAD, 14, 0, Color.TRANSPARENT, 8, 1))
+			social_badge.position = Vector2(48, 4)
+			b.add_child(social_badge)
 		var cb: Callable = it[2]
 		b.pressed.connect(func():
 			Audio.play("tap")
@@ -335,10 +358,68 @@ func _process(delta: float) -> void:
 		if Settings.show_fps:
 			fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 		fps_label.visible = Settings.show_fps
+	_amb_timer += delta
+	if _amb_timer > 0.5:
+		_update_ambience(_amb_timer)
+		_amb_timer = 0.0
 	_autosave += delta
 	if _autosave > AUTOSAVE_SEC:
 		_autosave = 0.0
 		save_now()
+
+
+func _view_rect() -> Rect2:
+	var vs := root_ui.get_viewport_rect().size / world.camera.zoom.x
+	return Rect2(world.camera.position - vs * 0.5, vs)
+
+
+## City soundscape: sea & gulls where the camera looks at water, traffic hum over land,
+## steppe wind in the Ankara winter, the odd ferry horn and tram bell.
+func _update_ambience(dt: float) -> void:
+	var r := _view_rect()
+	var water := 0
+	var total := 0
+	for i in 5:
+		for j in 5:
+			var p := (r.position + r.size * Vector2((i + 0.5) / 5.0, (j + 0.5) / 5.0)) / MapLayer.PX
+			if state.city.in_bounds(p):
+				total += 1
+				if state.city.is_sea(p):
+					water += 1
+	var wf := float(water) / maxi(1, total)
+	var close := clampf((world.camera.zoom.x - world.camera.min_zoom) / 0.4, 0.0, 1.0)
+	var f := CityEvents.flavor(state.city)
+	var amb: Array = f.get("ambience", [])
+	var levels := {}
+	if amb.has("sea"):
+		levels["sea_loop"] = wf * (0.35 + 0.5 * close)
+	if amb.has("city"):
+		levels["city_loop"] = (1.0 - wf) * (0.12 + 0.3 * close)
+	if state.is_snowing() or (state.city_id == "ankara" and CityEvents.is_winter(state.city, state.month)):
+		levels["wind_loop"] = 0.55 if state.has_event("snow_storm") else 0.3
+	Audio.set_ambience(levels)
+	var paused := current_speed() <= 0.0
+	# gulls
+	var gulls := world.flavor.birds_in(r)
+	if gulls > 0 and not paused and _rng.randf() < dt * (0.15 + 0.05 * gulls):
+		Audio.ambience_shot("gull_%d" % (1 + _rng.randi() % 6), clampf(0.25 + 0.6 * close, 0.0, 0.85), _rng.randf_range(0.9, 1.12))
+	if not paused:
+		var modes := state.net.modes_in_use()
+		if f.get("ferry_horn", false) and modes.has("ferry") and wf > 0.1 and _rng.randf() < dt * 0.025:
+			Audio.ambience_shot("ferry_horn", 0.35 + 0.4 * close)
+		if modes.has("tram") and close > 0.45 and _rng.randf() < dt * 0.03:
+			Audio.ambience_shot("tram_bell", 0.4 * close)
+	# snow
+	var target := 0.0
+	if state.has_event("snow_storm"):
+		target = 1.0
+	elif state.is_snowing():
+		target = 0.4
+	snow.intensity = lerpf(snow.intensity, target, 0.3)
+
+
+func _exit_tree() -> void:
+	Audio.stop_ambience()
 
 
 func save_now() -> void:
@@ -490,6 +571,38 @@ func open_goals() -> void:
 
 func open_finance() -> void:
 	show_sheet(panels.finance_sheet())
+
+
+func open_social() -> void:
+	show_sheet(panels.social_sheet())
+	_update_badge()
+
+
+func _update_badge() -> void:
+	if social_badge == null or not is_instance_valid(social_badge):
+		return
+	var n := state.feed.unread
+	social_badge.visible = n > 0
+	social_badge.text = str(mini(n, 99))
+
+
+func _on_post(p: Dictionary) -> void:
+	if is_instance_valid(sheet) and sheet.title_label and is_instance_valid(sheet.title_label) and sheet.title_label.text == I18n.t("social_title"):
+		state.feed.unread = 0
+		_refresh_live_sheet()
+	_update_badge()
+	if p.get("viral", false) and Time.get_ticks_msec() - _last_viral_toast > 15000:
+		_last_viral_toast = Time.get_ticks_msec()
+		var txt := state.feed.text_of(p)
+		if txt.length() > 90:
+			txt = txt.substr(0, 88) + "…"
+		toast.show_msg("@%s: %s" % [p["who"]["handle"], txt], "social", 4.0)
+
+
+func _on_city_event(eid: String) -> void:
+	toast.show_msg(I18n.t("event_" + eid), "info", 4.5)
+	Audio.play("chime", 1.0, -6.0)
+	world.labels.queue_redraw()
 
 
 func open_layers() -> void:
@@ -731,8 +844,14 @@ func finish_build() -> void:
 		_error(I18n.t("not_enough_cash"))
 		return
 	var extending := draft_extend >= 0
+	draft_nodes_committed = []
+	for n in draft_nodes:
+		if n["sid"] < 0:
+			draft_nodes_committed.append(n["pos"])
 	var lid := state.net.commit_draft(build_mode, build_deep, draft_nodes, cost, draft_extend, draft_at_start, ev.get("vehicles", 0))
 	var lname: String = state.net.lines[lid]["name"]
+	_check_archaeology(lid, cost)
+	state.feed.on_line_opened(state, lid, extending)
 	Audio.play("build")
 	Settings.vibrate(40)
 	toast.show_msg((I18n.t("line_extended") if extending else I18n.t("line_built")) % lname, "good")
@@ -752,6 +871,35 @@ func finish_build() -> void:
 
 
 # ======================================================================== events
+
+## Istanbul's historic peninsula: underground works may hit archaeological finds.
+func _check_archaeology(lid: int, cost: float) -> void:
+	var l: Dictionary = state.net.lines[lid]
+	if not TransitModes.get_mode(l["mode"])["underground"]:
+		return
+	var hit := false
+	for n in draft_nodes_committed:
+		if CityEvents.in_historic_zone(state.city, n):
+			hit = true
+			break
+	if not hit or _rng.randf() > 0.45:
+		return
+	var extra := maxf(60.0, cost * 0.18)
+	state.cash -= extra
+	state.year_capex += extra
+	state.cash_changed.emit()
+	state.feed.on_archaeology(state, lid)
+	var m := Modal.create(I18n.t("archaeology_title"), 620.0)
+	m.body.add_child(Icon.make("info", 64, Palette.ACCENT))
+	var lb := UI.wrap_label(I18n.t("archaeology_body") % [l["name"], Geo.fmt_money(extra)], 25, Palette.TEXT)
+	lb.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	m.body.add_child(lb)
+	var ok := UI.button(I18n.t("ok"), "AccentButton")
+	ok.pressed.connect(m.close)
+	m.body.add_child(ok)
+	Audio.play("chime")
+	show_modal(m)
+
 
 func _on_ridership() -> void:
 	_update_hud()
@@ -785,6 +933,7 @@ func _on_goals_changed(newly: Array) -> void:
 	var before_total := SaveManager.total_stars()
 	for g in newly:
 		toast.show_msg(I18n.t("goal_done") + " " + panels.goal_text(g), "star", 3.5)
+		state.feed.on_goal(state, panels.goal_text(g))
 	Audio.play("goal")
 	Settings.vibrate(50)
 	var prev_city := SaveManager.city_stars(state.city_id)

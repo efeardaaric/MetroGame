@@ -93,6 +93,10 @@ func _ease_ends(x: float) -> float:
 
 
 func _draw_boat(length: float, width: float, col: Color, alpha: float) -> void:
+	# wake
+	var wake := PackedVector2Array([Vector2(-length * 0.45, -width * 0.35), Vector2(-length * 2.6, -width * 1.6),
+		Vector2(-length * 2.6, width * 1.6), Vector2(-length * 0.45, width * 0.35)])
+	draw_colored_polygon(wake, Color(1, 1, 1, 0.22 * alpha))
 	var pts := PackedVector2Array([
 		Vector2(length * 0.55, 0), Vector2(length * 0.25, -width * 0.5), Vector2(-length * 0.5, -width * 0.5),
 		Vector2(-length * 0.5, width * 0.5), Vector2(length * 0.25, width * 0.5)])

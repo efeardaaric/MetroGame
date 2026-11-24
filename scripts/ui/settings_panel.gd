@@ -16,6 +16,10 @@ static func open(parent: Node, on_language_changed: Callable = Callable()) -> Mo
 		Settings.save_settings()
 		Audio.play("tap")
 	))
+	b.add_child(_slider_row(I18n.t("ambience"), Settings.ambience_volume, func(v: float):
+		Settings.ambience_volume = v
+		Settings.save_settings()
+	))
 	b.add_child(_toggle_row(I18n.t("haptics"), Settings.haptics, func(on: bool):
 		Settings.haptics = on
 		Settings.save_settings()

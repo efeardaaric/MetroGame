@@ -47,6 +47,9 @@ func _run() -> void:
 	build(g, "rail", false, [[32.60, 39.965], [32.70, 39.955], [32.80, 39.950], [32.845, 39.936], [32.92, 39.93]])
 	build(g, "tram", false, [[32.854, 39.920], [32.84, 39.905], [32.80, 39.909], [32.78, 39.893], [32.75, 39.875]])
 	g._set_speed(3)
+	g.state.month = 0
+	g.state.active_events.append({"id": "snow_storm", "months": 2})
+	g.state._update_mods()
 	await wait(2.5)
 	await shot("L03_ankara")
 	g.open_build_menu()
@@ -72,6 +75,13 @@ func _run() -> void:
 	g.world._on_zoom(z)
 	await wait(2.0)
 	await shot("L06_izmir")
+	z = 0.5
+	g.world.camera.position = g.state.city.project(27.0, 38.505) * MapLayer.PX
+	g.world.camera.zoom = Vector2(z, z)
+	g.world._on_zoom(z)
+	await wait(1.0)
+	await shot("L06b_flamingo")
+	g.world.camera.position = g.state.city.project(27.13, 38.43) * MapLayer.PX
 	g.set_overlay("elev")
 	await wait(0.6)
 	await shot("L07_izmir_elev")

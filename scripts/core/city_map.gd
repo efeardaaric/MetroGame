@@ -127,7 +127,9 @@ func _build_zones() -> void:
 		var pos := project(p["lon"], p["lat"])
 		var poi := {"id": p["id"], "name_key": p["name_key"], "pos": pos, "kind": p["kind"]}
 		pois.append(poi)
-		zones.append(_make_zone(p["name_key"], pos, 0.0, float(p.get("jobs", 50)), 0.5, p["id"], rng))
+		var zp := _make_zone(p["name_key"], pos, 0.0, float(p.get("jobs", 50)), 0.5, p["id"], rng)
+		zp["kind"] = p["kind"]
+		zones.append(zp)
 
 
 func _make_zone(zname: String, pos: Vector2, pop: float, jobs: float, r: float, poi_id: String, rng: RandomNumberGenerator) -> Dictionary:

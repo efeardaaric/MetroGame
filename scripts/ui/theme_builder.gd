@@ -9,6 +9,8 @@ static func font(weight: int = 600) -> Font:
 	if _font_cache.has(weight):
 		return _font_cache[weight]
 	var base: FontFile = load("res://assets/fonts/Nunito.ttf")
+	if base.fallbacks.is_empty() and ResourceLoader.exists("res://assets/fonts/NotoEmoji.ttf"):
+		base.fallbacks = [load("res://assets/fonts/NotoEmoji.ttf")]
 	var fv := FontVariation.new()
 	fv.base_font = base
 	var tag := TextServerManager.get_primary_interface().name_to_tag("wght")

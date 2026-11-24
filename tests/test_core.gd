@@ -77,12 +77,34 @@ func _run() -> void:
 	for i in 36 * 20:
 		st.advance(GameState.MONTH_SECONDS / 20.0, 1.0)
 	print("  after 3y: year %d cash %.0f riders %.0f profit %.0f" % [st.year, st.cash, st.riders, st.last_year_profit])
+	print("  feed posts %d approval %.1f events %s" % [st.feed.posts.size(), st.feed.approval, str(st.active_events)])
+	check(st.feed.posts.size() > 5, "social feed produced posts")
+	for i in mini(5, st.feed.posts.size()):
+		print("    @%s: %s (%d likes)" % [st.feed.posts[i]["who"]["handle"], st.feed.posts[i]["tr"], st.feed.posts[i]["likes"]])
+	check(SocialFeed.tr_suffix("M1", "da") == "de", "M1'de")
+	check(SocialFeed.tr_suffix("Fatih", "dan") == "ten", "Fatih'ten")
+	check(SocialFeed.tr_suffix("Konak", "a") == "a", "Konak'a")
+	check(SocialFeed.tr_suffix("Bostancı", "a") == "ya", "Bostancı'ya")
+	check(SocialFeed.tr_suffix("M4", "da") == "te", "M4'te")
+	check(SocialFeed.tr_suffix("Kadıköy", "dan") == "den", "Kadıköy'den")
+	# seasonal modifiers
+	var a_st := GameState.new("ankara")
+	a_st.month = 0
+	a_st._update_mods()
+	check(a_st.demand.mods.get("speed", {}).get("tram", 1.0) < 1.0, "Ankara winter slows trams")
+	check(a_st.is_snowing(), "Ankara snows in January")
+	var i_st := GameState.new("izmir")
+	i_st.month = 8
+	i_st._update_mods()
+	check(i_st.demand.mods.get("poi", {}).get("kulturpark", 1.0) > 2.0, "Izmir fair boosts Kültürpark in September")
+	check(CityEvents.in_historic_zone(st.city, st.city.project(28.95, 41.01)), "Fatih is a historic zone")
 	var sv := st.to_dict()
 	var js := JSON.stringify(sv)
 	var st2 := GameState.new("istanbul")
 	st2.from_dict(JSON.parse_string(js))
 	check(st2.net.lines.size() == st.net.lines.size(), "save/load lines")
 	check(absf(st2.cash - st.cash) < 0.01, "save/load cash")
+	check(st2.feed.posts.size() == mini(st.feed.posts.size(), 50), "save/load feed")
 
 	for cid in ["ankara", "izmir"]:
 		print("== ", cid)

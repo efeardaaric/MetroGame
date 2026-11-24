@@ -7,6 +7,7 @@ const PATH := "user://settings.cfg"
 
 var music_volume := 0.6
 var sfx_volume := 0.8
+var ambience_volume := 0.7
 var haptics := true
 var language := ""
 var show_fps := false
@@ -28,6 +29,7 @@ func load_settings() -> void:
 		return
 	music_volume = cf.get_value("audio", "music", music_volume)
 	sfx_volume = cf.get_value("audio", "sfx", sfx_volume)
+	ambience_volume = cf.get_value("audio", "ambience", ambience_volume)
 	haptics = cf.get_value("general", "haptics", haptics)
 	language = cf.get_value("general", "language", language)
 	show_fps = cf.get_value("general", "show_fps", show_fps)
@@ -38,6 +40,7 @@ func save_settings() -> void:
 	var cf := ConfigFile.new()
 	cf.set_value("audio", "music", music_volume)
 	cf.set_value("audio", "sfx", sfx_volume)
+	cf.set_value("audio", "ambience", ambience_volume)
 	cf.set_value("general", "haptics", haptics)
 	cf.set_value("general", "language", language)
 	cf.set_value("general", "show_fps", show_fps)

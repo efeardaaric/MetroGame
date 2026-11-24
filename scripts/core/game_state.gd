@@ -8,6 +8,7 @@ signal cash_changed
 signal goals_changed(newly_completed: Array)
 signal ridership_updated
 signal bankrupt
+signal event_started(event_id: String)
 
 const START_YEAR := 2026
 const FARE := 10.0            # ₺ per linked trip
@@ -39,6 +40,9 @@ var game_over := false
 var dirty := true
 var tutorial_step := 0
 var total_built := 0.0
+var feed := SocialFeed.new()
+var active_events: Array = []   # [{id, months}]
+var _ev_rng := RandomNumberGenerator.new()
 var async_demand := false   # GameScreen enables this so heavy recomputes run on a worker thread
 var _task_id := -1
 var _pending: DemandModel
@@ -51,6 +55,32 @@ func _init(id: String) -> void:
 	demand = DemandModel.new(city, net)
 	cash = city.data["start_cash"]
 	net.changed.connect(func(): dirty = true)
+	_ev_rng.randomize()
+	_update_mods()
+
+
+## Recomputes seasonal + event demand modifiers; marks demand dirty when they change.
+func _update_mods() -> void:
+	var m := CityEvents.combine(CityEvents.seasonal_mods(city, month), CityEvents.event_mods(active_events))
+	if m != demand.mods:
+		demand.mods = m
+		dirty = true
+
+
+func is_snowing() -> bool:
+	if CityEvents.is_winter(city, month):
+		return true
+	for e in active_events:
+		if e["id"] == "snow_storm":
+			return true
+	return false
+
+
+func has_event(eid: String) -> bool:
+	for e in active_events:
+		if e["id"] == eid:
+			return true
+	return false
 
 
 func years_elapsed() -> float:
@@ -92,6 +122,7 @@ func recompute_if_dirty() -> void:
 		var snap_net := TransitNetwork.new(city)
 		snap_net.from_dict(net.to_dict())
 		_pending = DemandModel.new(city, snap_net)
+		_pending.mods = demand.mods.duplicate(true)
 		var job := _pending
 		_task_id = WorkerThreadPool.add_task(func(): job.compute(), false, "demand")
 		return
@@ -132,7 +163,8 @@ func flush_demand() -> void:
 
 
 func monthly_grant() -> float:
-	var sat_mult := lerpf(0.75, 1.2, demand.satisfaction / 100.0)
+	var opinion := demand.satisfaction * 0.7 + feed.approval * 0.3
+	var sat_mult := lerpf(0.75, 1.2, opinion / 100.0)
 	return city.data["annual_grant"] * sat_mult / 12.0
 
 
@@ -185,6 +217,19 @@ func _end_month() -> void:
 	month += 1
 	if month >= 12:
 		_end_year()
+	_tick_events()
+	feed.monthly(self)
+
+
+func _tick_events() -> void:
+	for e in active_events:
+		e["months"] = int(e["months"]) - 1
+	active_events = active_events.filter(func(e): return e["months"] > 0)
+	for eid in CityEvents.roll_events(city, month, _ev_rng, active_events):
+		active_events.append({"id": eid, "months": CityEvents.EVENTS[eid]["months"]})
+		feed.on_event(self, eid)
+		event_started.emit(eid)
+	_update_mods()
 
 
 func _end_year() -> void:
@@ -209,6 +254,7 @@ func _end_year() -> void:
 		"stations": net.stations.size(),
 	}
 	last_year_profit = fare_income - year_expense
+	feed.on_year(self, report)
 	year += 1
 	month = 0
 	year_income = 0.0
@@ -325,6 +371,7 @@ func to_dict() -> Dictionary:
 		"year_expense": year_expense, "year_capex": year_capex, "last_year_profit": last_year_profit if last_year_profit > -1e30 else -1e30,
 		"best_riders": best_riders, "game_over": game_over, "tutorial_step": tutorial_step,
 		"total_built": total_built, "network": net.to_dict(),
+		"feed": feed.to_dict(), "events": active_events,
 	}
 
 
@@ -348,5 +395,8 @@ func from_dict(d: Dictionary) -> void:
 	total_built = d.get("total_built", 0.0)
 	city.grow(years_elapsed())
 	net.from_dict(d.get("network", {}))
+	feed.from_dict(d.get("feed", {}))
+	active_events = d.get("events", [])
+	_update_mods()
 	dirty = true
 	recompute_if_dirty()

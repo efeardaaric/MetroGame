@@ -8,6 +8,7 @@ var labels: LabelLayer
 var network: NetworkLayer
 var vehicles: VehicleLayer
 var draft: DraftLayer
+var flavor: FlavorLayer
 var camera: CameraRig
 
 
@@ -16,6 +17,9 @@ func setup(s: GameState) -> void:
 	map = MapLayer.new()
 	add_child(map)
 	map.setup(s.city)
+	flavor = FlavorLayer.new()
+	add_child(flavor)
+	flavor.setup(s.city)
 	labels = LabelLayer.new()
 	add_child(labels)
 	labels.setup(s.city)
@@ -55,6 +59,7 @@ func _on_zoom(z: float) -> void:
 	network.set_zoom(z)
 	vehicles.zoom = z
 	draft.zoom = z
+	flavor.set_zoom(z)
 
 
 func focus_km(p: Vector2, z: float = -1.0) -> void:

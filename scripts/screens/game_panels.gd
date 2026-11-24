@@ -217,6 +217,7 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 			gs._error(I18n.t("not_enough_cash"))
 			return
 		st.net.set_vehicles(lid, l["vehicles"] + 1)
+		st.feed.on_vehicles_added(st, lid)
 		Audio.play("cash", 1.1, -6.0)
 		_after_line_change(content, lid)
 	)
@@ -282,7 +283,9 @@ func _fill_line(content: VBoxContainer, lid: int) -> void:
 	var del := UI.button(I18n.t("delete_line"), "DangerButton", "trash")
 	del.pressed.connect(func():
 		var m2 := Modal.confirm(gs.ui_layer, I18n.t("confirm_delete_line") % l["name"], func():
+			var lname: String = l["name"]
 			var refund := st.net.remove_line(lid)
+			st.feed.on_line_removed(st, lname)
 			st.refund(refund)
 			Audio.play("undo")
 			if is_instance_valid(gs.sheet):
@@ -536,3 +539,88 @@ func year_report(r: Dictionary) -> Modal:
 	ok.pressed.connect(m.close)
 	b.add_child(ok)
 	return m
+
+
+# ------------------------------------------------------------------ social feed ("Cıvıltı")
+
+var _social_filter := "all"
+
+
+func social_sheet() -> Sheet:
+	var st := _st()
+	st.feed.unread = 0
+	var s := Sheet.create(I18n.t("social_title"), 0.88)
+	var bird := Icon.make("bird", 44, Palette.INFO)
+	bird.size_flags_vertical = Control.SIZE_SHRINK_CENTER
+	s.header.add_child(bird)
+	s.header.move_child(bird, 0)
+	var content := UI.vbox(14)
+	s.body.add_child(content)
+	var fill := func():
+		UI.clear(content)
+		_fill_social(content, s)
+	fill.call()
+	s.set_meta("live", fill)
+	return s
+
+
+func _fill_social(content: VBoxContainer, s: Sheet) -> void:
+	var st := _st()
+	var feed := st.feed
+	feed.unread = 0
+	# public opinion
+	var card := UI.card()
+	var v := UI.vbox(8)
+	var ap := feed.approval
+	var col := Palette.GOOD if ap >= 60 else (Palette.WARN if ap >= 40 else Palette.BAD)
+	v.add_child(UI.stat_row(I18n.t("public_opinion"), "%d%%" % int(ap), col))
+	v.add_child(UI.progress(ap / 100.0, col, 10.0))
+	v.add_child(UI.wrap_label(I18n.t("opinion_hint"), 19, Palette.FAINT))
+	card.add_child(v)
+	content.add_child(card)
+	# trending
+	var tr := feed.trending(5)
+	if not tr.is_empty():
+		content.add_child(UI.label(I18n.t("trending"), 22, Palette.MUTED, 800))
+		var flow := HFlowContainer.new()
+		flow.add_theme_constant_override("h_separation", 8)
+		flow.add_theme_constant_override("v_separation", 8)
+		for tag in tr:
+			var chip := PanelContainer.new()
+			chip.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(Palette.INFO, 0.15), 16, 0, Color.TRANSPARENT, 12, 6))
+			chip.add_child(UI.label(tag, 21, Palette.INFO, 850))
+			flow.add_child(chip)
+		content.add_child(flow)
+	# filters
+	var fr := UI.hbox(8)
+	for it in [["all", "filter_all"], ["pos", "filter_praise"], ["neg", "filter_complaints"], ["news", "filter_news"]]:
+		var key: String = it[0]
+		var b := UI.button(I18n.t(it[1]), "AccentButton" if _social_filter == key else "", "", 56)
+		b.add_theme_font_size_override("font_size", 20)
+		b.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+		b.pressed.connect(func():
+			_social_filter = key
+			UI.clear(content)
+			_fill_social(content, s)
+		)
+		fr.add_child(b)
+	content.add_child(fr)
+	var shown := 0
+	for p in feed.posts:
+		var kind: String = p["who"].get("kind", "citizen")
+		match _social_filter:
+			"pos":
+				if float(p["sent"]) <= 0.3 or kind != "citizen":
+					continue
+			"neg":
+				if float(p["sent"]) >= -0.3:
+					continue
+			"news":
+				if kind == "citizen":
+					continue
+		content.add_child(PostCard.make(p, feed))
+		shown += 1
+		if shown >= 40:
+			break
+	if shown == 0:
+		content.add_child(UI.wrap_label(I18n.t("social_empty"), 23, Palette.MUTED))

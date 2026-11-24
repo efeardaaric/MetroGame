@@ -44,6 +44,28 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
 - Ağır yolcu hesabı **arka plan thread'inde** çalışır → ağ büyüse de 60 FPS.
 - Özgün müzik ve ses efektleri (`tools/gen_audio.py` ile üretildi), özgün ikon/splash.
 
+### Şehre özel detaylar ve mekanikler
+- **İstanbul**: Boğaz ve Marmara üzerinde uçan martı sürüleri ve martı sesleri, dalga ambiyansı,
+  vapur düdüğü, 15 Temmuz / FSM / Yavuz Sultan Selim / Galata köprüleri, Galata Kulesi, Kız Kulesi,
+  Rumeli Hisarı. **Tarihi yarımada arkeolojisi**: Fatih/Sultanahmet çevresinde yer altı kazısı
+  yaparsan tarihi buluntu çıkabilir (ek maliyet + haber). Rastgele **köprü trafiği**, derbi, sağanak
+  olayları talebi değiştirir. Vapur yolculuğu daha konforlu (çay-simit).
+- **Ankara**: Kışın (Ara–Şub) kar yağar, ekranda kar efekti ve bozkır rüzgârı; tramvay ve metrobüs
+  yavaşlar, **kar fırtınası** olayında iyice yavaşlar — metro altın değerinde. **Üniversite dönemi**:
+  ODTÜ/Bilkent/Hacettepe talebi Eyl–Eki'de artar, yazın düşer. Atakule, Ankara Kalesi.
+- **İzmir**: Kuş Cenneti'nde yürüyen **flamingolar**, martılar, dalga sesi; **yaz sezonu** vapur ve
+  sahil talebini artırır, **imbat** rüzgârı vapuru daha cazip yapar, **Eylül'de Enternasyonal Fuar**
+  Kültürpark'a talebi 3 katına çıkarır. Tarihi Asansör, Kadifekale.
+
+### Sosyal medya: "Cıvıltı"
+Şehir halkı kararlarına sosyal ağda tepki verir: yeni hat açılışında sevinç gönderileri, havalimanı/
+kampüs bağlantılarına teşekkürler, kalabalık ve seyrek seferlere şikayetler (@rayagi_resmi etiketli),
+hat kapatınca öfke, yıl sonu haberleri, şehir olayları ve yerel tatlar (simit-martı, boyoz, ayaz…).
+- **Kamuoyu desteği** gönderilerin duygu ve beğeni sayısından hesaplanır; memnuniyetle birlikte
+  belediye desteğini etkiler. Şikayet edilen hatta araç eklersen resmi hesap duyurur, halk teşekkür eder.
+- Gündem (trend hashtag'ler), filtreler (Övgü/Şikayet/Haber), beğeni, viral gönderi bildirimi, okunmamış rozeti.
+- Türkçe eklerde ünlü uyumu otomatik (M1'de, Fatih'ten, Bostancı'ya…).
+
 ## Proje yapısı
 
 ```
@@ -58,7 +80,7 @@ scripts/
   ui/                    Tema, ikonlar, sheet/modal/toast, grafikler, boy kesit
   screens/               main_menu, game_screen, game_panels
 assets/                  Yazı tipi (Nunito, OFL), sesler, ikonlar, önceden pişirilmiş harita rasterleri
-tools/                   gen_audio.py, gen_icons.py, bake_maps.(gd|tscn), check_i18n.py
+tools/                   gen_audio.py, gen_icons.py, process_ambience.py, bake_maps.(gd|tscn), check_i18n.py
 tests/                   test_core (simülasyon/denge), shots (görsel duman testi)
 .github/workflows/       CI: testler + Android APK + iOS Xcode projesi
 ```
@@ -121,6 +143,8 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 - Kod: proje sahibine aittir.
 - Godot Engine: MIT. Nunito yazı tipi: SIL OFL 1.1 (`assets/fonts/OFL.txt`).
 - Müzik, ses efektleri, ikonlar: bu proje için üretilmiş özgün içerik.
+- Ortam sesleri (martı, dalga, trafik): OpenGameArt, **CC0** — ayrıntı `assets/audio/amb/CREDITS.md`.
+- Noto Emoji yazı tipi: SIL OFL 1.1 (`assets/fonts/NotoEmoji-OFL.txt`).
 
 ## Ekran görüntüleri
 
@@ -128,3 +152,4 @@ tests/                   test_core (simülasyon/denge), shots (görsel duman tes
 |---|---|---|
 | ![](docs/screenshots/01_menu.png) | ![](docs/screenshots/02_network.png) | ![](docs/screenshots/03_line.png) |
 | ![](docs/screenshots/04_profile.png) | ![](docs/screenshots/05_cities_landscape.png) | ![](docs/screenshots/06_izmir_landscape.png) |
+| ![](docs/screenshots/07_bosphorus.png) | ![](docs/screenshots/08_social.png) | ![](docs/screenshots/09_ankara_snow.png) |

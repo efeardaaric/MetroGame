@@ -34,6 +34,7 @@ func _ready() -> void:
 	ui_layer.add_child(root)
 	_build_menu()
 	Audio.play_music()
+	Audio.set_ambience({"sea_loop": 0.25, "city_loop": 0.08})
 	get_viewport().size_changed.connect(_on_resize)
 
 
