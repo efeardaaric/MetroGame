@@ -1,0 +1,55 @@
+; Engine configuration file.
+; Ray Ağı — Metro Builder (Godot 4.3)
+
+config_version=5
+
+[application]
+
+config/name="Ray Ağı: Metro Kur"
+config/description="İstanbul, Ankara ve İzmir'de kendi raylı sistem ağını kur."
+config/version="1.0.0"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+boot_splash/bg_color=Color(0.0627451, 0.0901961, 0.141176, 1)
+boot_splash/show_image=false
+config/icon="res://assets/icons/icon.png"
+
+[autoload]
+
+I18n="*res://scripts/autoload/i18n.gd"
+Settings="*res://scripts/autoload/settings.gd"
+Audio="*res://scripts/autoload/audio.gd"
+SaveManager="*res://scripts/autoload/save_manager.gd"
+
+[display]
+
+window/size/viewport_width=720
+window/size/viewport_height=1280
+window/size/window_width_override=405
+window/size/window_height_override=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+window/handheld/orientation=6
+window/energy_saving/keep_screen_on=true
+
+[gui]
+
+common/drop_mouse_on_gui_input_disabled=true
+
+[input_devices]
+
+pointing/emulate_touch_from_mouse=false
+pointing/emulate_mouse_from_touch=true
+
+[physics]
+
+common/physics_ticks_per_second=30
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true
+anti_aliasing/quality/msaa_2d=1
+2d/snap/snap_2d_transforms_to_pixel=false
+environment/defaults/default_clear_color=Color(0.0627451, 0.0901961, 0.141176, 1)
