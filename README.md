@@ -1,10 +1,23 @@
-# Ray Ağı — Metro Kur (iOS & Android)
+# Metro Tycoon: Türkiye — Şehir Ulaşım Simülatörü (iOS & Android)
 
 İstanbul, Ankara ve İzmir'in gerçek coğrafyası üzerinde kendi raylı sistem ağını kurduğun,
 mobil için baştan tasarlanmış bir ulaşım-strateji oyunu. **Godot 4.3** ile geliştirildi.
 
-> Çalışma adı "Ray Ağı"dır; `project.godot` içindeki `config/name` ve dışa aktarma
-> ayarlarındaki paket adı (`com.rayagi.metro`) yayından önce kendi markanla değiştirilmelidir.
+> Mağaza adı **Metro Tycoon: Türkiye** (alt başlık: *Şehir Ulaşım Simülatörü*). Eski çalışma adı
+> "Ray Ağı"ydı; paket kimliği (`com.rayagi.metro`) yayından önce kendi hesabına göre değiştirilmelidir.
+
+### Zamana karşı yarış: seçimler ve gerçek etkinlikler
+- Kampanya her şehirde **2010**'dan, ulaşıma büyük yatırımlar başlamadan önce başlar.
+- **Yerel seçimler** gerçek takvimde yapılır (Mart 2014, 2019, 2024, 2029…). Oy oranı memnuniyet,
+  kamuoyu (Cıvıltı), kapsama hedefi, yolcu artışı, borç ve seçim vaadine göre hesaplanır;
+  %50'nin altında kalırsan görevden düşersin. Seçimden 14 ay önce bir vaat seçersin.
+- **Gerçek etkinlikler** aylar önceden duyurulur ve etkinlik alanına 1,2 km içinde çalışan bir
+  istasyon beklenir: Ankara'da Cumhuriyet'in 100. yılı (2023) ve NATO Zirvesi (2026), Antalya'da
+  G20 (2015), EXPO 2016 ve COP31 (2026), İstanbul'da 2010 Kültür Başkenti, her yıl İstanbul
+  Maratonu ve 2023 Şampiyonlar Ligi finali, Eskişehir 2013 ve Bursa 2022 Türk Dünyası Kültür
+  Başkentliği, Trabzon EYOF 2011, İzmir depremi (2020) ve tüm şehirlerde 2020 salgını.
+- Derbi, köprü trafiği, zirve kapanışları haritada canlı trafik sıkışıklığı, kalabalık akışı ve
+  havai fişeklerle görünür; önemli Cıvıltı paylaşımları ekrana düşer.
 
 ## Neden Godot (Unity değil)?
 

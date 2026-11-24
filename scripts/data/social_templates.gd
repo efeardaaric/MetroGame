@@ -17,7 +17,7 @@ const NEWS := [
 	{"name": "Ulaşım Bülteni", "handle": "ulasimbulteni", "color": "1d72d8"},
 	{"name": "Şehir Gündemi", "handle": "sehirgundemi", "color": "2a9d8f"},
 ]
-const OFFICIAL := {"name": "Ray Ağı İşletme", "handle": "rayagi_resmi", "color": "ffb703"}
+const OFFICIAL := {"name": "Metro İşletmesi", "handle": "metro_resmi", "color": "ffb703"}
 
 const T := {
 	"line_open": [
@@ -62,10 +62,10 @@ const T := {
 	],
 	"crowded": [
 		["{line} sardalya konservesi gibi, nefes alamıyorum 🐟 #{line}", "{line} is like a sardine can, can't breathe 🐟 #{line}", -0.9],
-		["Üç tren kaçırdım, {st:da} bekliyorum hâlâ. Ek sefer lütfen! @rayagi_resmi", "Missed three trains, still waiting at {st}. More trains please! @rayagi_resmi", -0.8],
+		["Üç tren kaçırdım, {st:da} bekliyorum hâlâ. Ek sefer lütfen! @metro_resmi", "Missed three trains, still waiting at {st}. More trains please! @metro_resmi", -0.8],
 		["{line:da} yer bulmak piyangodan zor #kalabalık", "Finding a seat on {line} is harder than winning the lottery #crowded", -0.7],
 		["Sabah {line:a} binmek ekstrem spor gibi 😩", "Riding {line} in the morning is an extreme sport 😩", -0.7],
-		["{line} kapasite sorununu ne zaman çözeceksiniz? @rayagi_resmi", "When will you fix {line}'s capacity problem? @rayagi_resmi", -0.8],
+		["{line} kapasite sorununu ne zaman çözeceksiniz? @metro_resmi", "When will you fix {line}'s capacity problem? @metro_resmi", -0.8],
 	],
 	"long_wait": [
 		["{line} sefer aralığı {n} dakika mı?! Bu ne biçim metro 🙄", "{line} runs every {n} minutes?! What kind of metro is this 🙄", -0.7],
@@ -179,7 +179,7 @@ const T := {
 	],
 	"inc_breakdown": [
 		["{line:da} arıza var, trenler yarım kapasite 😤 #arıza", "Breakdown on {line}, trains at half capacity 😤 #breakdown", -0.7],
-		["{line} yine arızalı, işe geç kaldım. Bakım nerede? @rayagi_resmi", "{line} broke down again, late for work. Where's the maintenance? @rayagi_resmi", -0.8],
+		["{line} yine arızalı, işe geç kaldım. Bakım nerede? @metro_resmi", "{line} broke down again, late for work. Where's the maintenance? @metro_resmi", -0.8],
 	],
 	"inc_strike": [
 		["Grev nedeniyle {line} seferleri yapılmıyor ✊ #grev", "{line} is not running due to a strike ✊ #strike", -0.6],
@@ -266,5 +266,93 @@ const T := {
 		["Boyoz + gevrek + vapur = mükemmel İzmir sabahı 🥐 #İzmir", "Boyoz + gevrek + ferry = perfect Izmir morning 🥐 #Izmir", 0.9],
 		["Kordon'da gün batımı, sonra metroyla eve. İzmir böyle güzel 🌇", "Sunset on the Kordon, then home by metro. That's Izmir 🌇", 0.9],
 		["Kuş Cenneti'nde flamingolar geldi! Pembe pembe 🦩 #İzmir", "The flamingos are back at the bird sanctuary! So pink 🦩 #Izmir", 0.8],
+	],
+	# ------------------------------------------------ real dated events
+	"re_announce": [
+		["SON DAKİKA: {event} şehrimizde! {n} ay sonra binlerce ziyaretçi bekleniyor. Ulaşım hazır mı? 🚨", "BREAKING: {event} is coming to our city! Thousands expected in {n} months. Is transit ready? 🚨", 0.2],
+		["{event} için geri sayım başladı: {n} ay. Gözler ulaşım planında 👀 #{city}", "Countdown to {event}: {n} months. All eyes on the transit plan 👀 #{city}", 0.1],
+	],
+	"re_reminder": [
+		["{event} kapıda ({n} ay) ama etkinlik alanına hâlâ raylı sistem yok! 😬", "{event} is {n} months away and there's still no rail to the venue! 😬", -0.6],
+		["Uzmanlar uyarıyor: {event} öncesi ulaşım hazırlığı yetersiz. Kalan süre {n} ay.", "Experts warn: transit is not ready for {event}. {n} months left.", -0.5],
+	],
+	"re_ok": [
+		["{event} için trenle geldim, kapıda indim. Böyle organizasyon görmedim 👏", "Came to {event} by train, got off at the gate. Never seen it this smooth 👏", 0.95],
+		["Yabancı misafirler metroya bayıldı. {event} şehrin vitrini oldu 🌍", "Foreign guests loved the metro. {event} made our city shine 🌍", 0.9],
+	],
+	"re_ok_news": [
+		["{event} kusursuz geçti: raylı sistem rekor yolcu taşıdı.", "{event} went flawlessly: rail carried record crowds.", 0.8],
+	],
+	"re_fail": [
+		["{event} yüzünden 3 saat trafikte kaldık. Raylı sistem nerede?! 😡", "Stuck in traffic for 3 hours because of {event}. Where is the rail?! 😡", -0.95],
+		["Dünya bizi izliyor, biz kuyrukta bekliyoruz. {event} ulaşım fiyaskosu 🤦", "The world is watching and we're stuck in queues. {event} transit fiasco 🤦", -0.9],
+	],
+	"re_fail_news": [
+		["{event} ulaşım krizine döndü: etkinlik alanına raylı bağlantı yoktu.", "{event} turned into a transit crisis: no rail link to the venue.", -0.8],
+	],
+	"re_covid": [
+		["Salgın nedeniyle şehir sessiz: toplu taşımada yolcu sayısı çakıldı. Maske ve mesafe kuralları yürürlükte 😷", "The pandemic has silenced the city: transit ridership collapsed. Masks and distancing in force 😷", -0.4],
+	],
+	"re_izm_quake": [
+		["İzmir'de 6.6 büyüklüğünde deprem! Raylı sistemde hasar tespit çalışmaları sürüyor 🙏 #İzmir", "A magnitude 6.6 earthquake hit Izmir! Rail lines are being inspected 🙏 #Izmir", -0.5],
+	],
+	"re_ist_marathon": [
+		["İstanbul Maratonu bugün: köprü araç trafiğine kapalı, kıtalar arası koşu başladı 🏃", "Istanbul Marathon today: the bridge is closed to cars, the intercontinental run is on 🏃", 0.3],
+	],
+	"re_ist_ecoc": [
+		["İstanbul 2010 Avrupa Kültür Başkenti! Müzeler, konserler, festivaller 🎭", "Istanbul is the 2010 European Capital of Culture! Museums, concerts, festivals 🎭", 0.7],
+	],
+	"re_ist_ucl": [
+		["Şampiyonlar Ligi finali İstanbul'da! 70 bin taraftar Olimpiyat Stadı'na akıyor ⚽", "The Champions League final is in Istanbul! 70,000 fans heading to the Olympic Stadium ⚽", 0.4],
+	],
+	"re_ank_centenary": [
+		["Cumhuriyetimiz 100 yaşında! 🇹🇷 Kızılay'da büyük kutlama, havai fişekler 🎆", "Our Republic turns 100! 🇹🇷 Huge celebration in Kızılay, fireworks 🎆", 0.8],
+	],
+	"re_ank_nato": [
+		["NATO Zirvesi başladı: liderler Ankara'da, Söğütözü çevresinde geniş güvenlik önlemi 🚧", "NATO Summit opens: leaders in Ankara, tight security around Söğütözü 🚧", 0.1],
+	],
+	"re_ant_cop31": [
+		["COP31 İklim Zirvesi Antalya'da! Delegeler toplu taşımaya yönlendiriliyor 🌱", "COP31 climate summit in Antalya! Delegates directed to public transit 🌱", 0.4],
+	],
+	"re_ant_g20": [
+		["G20 Liderler Zirvesi Antalya'da: yollar kapalı, şehir alarmda 🚨", "G20 Leaders' Summit in Antalya: roads closed, city on alert 🚨", 0.0],
+	],
+	"re_ant_expo": [
+		["EXPO 2016 Antalya kapılarını açtı! Çiçekler ve çocuklar teması 🌷", "EXPO 2016 Antalya opens! Theme: flowers and children 🌷", 0.6],
+	],
+	"re_trb_eyof": [
+		["Avrupa Gençlik Olimpiyat Festivali Trabzon'da başladı! 🏅", "The European Youth Olympic Festival kicks off in Trabzon! 🏅", 0.6],
+	],
+	"re_esk_turkic": [
+		["Eskişehir 2013 Türk Dünyası Kültür Başkenti! Odunpazarı rengârenk 🎨", "Eskişehir is the 2013 Turkic World Capital of Culture! Odunpazarı is full of colour 🎨", 0.6],
+	],
+	"re_bur_turkic": [
+		["Bursa 2022 Türk Dünyası Kültür Başkenti! 🎨 #Bursa", "Bursa is the 2022 Turkic World Capital of Culture! 🎨 #Bursa", 0.6],
+	],
+	# ------------------------------------------------ elections
+	"elec_poll": [
+		["ANKET: Seçime {m} ay kala ulaşım politikanıza destek %{n} 🗳️", "POLL: {m} months before the election, support for your transit policy is {n}% 🗳️", 0.0],
+		["Son kamuoyu yoklaması: %{n}. Seçime {m} ay var. #Seçim", "Latest opinion poll: {n}%. {m} months to the election. #Election", 0.0],
+	],
+	"elec_last": [
+		["Seçime son 1 ay! Son ankette oy oranı %{n} 🗳️", "One month to the election! Final poll: {n}% 🗳️", 0.0],
+	],
+	"elec_win": [
+		["SEÇİM SONUÇLARI: Ulaşım vaatleri kazandı, oy oranı %{n} 🎉", "ELECTION RESULTS: The transit agenda wins with {n}% 🎉", 0.8],
+	],
+	"elec_win_cit": [
+		["Metroya oy verdik, metro kazandı! 🚇🗳️", "We voted for the metro, and the metro won! 🚇🗳️", 0.9],
+	],
+	"elec_lose": [
+		["SEÇİM SONUÇLARI: Seçmen ulaşımdan memnun değildi, oy oranı %{n} kaldı.", "ELECTION RESULTS: Voters weren't happy with transit, only {n}%.", -0.9],
+	],
+	"elec_promise_lines": [
+		["Söz veriyoruz: seçimlere kadar 2 yeni raylı hat hizmete girecek!", "Our promise: 2 new lines will open before the election!", 0.4],
+	],
+	"elec_promise_riders": [
+		["Söz veriyoruz: toplu taşıma yolcu sayısını %30 artıracağız!", "Our promise: we'll grow ridership by 30%!", 0.4],
+	],
+	"elec_promise_sat": [
+		["Söz veriyoruz: yolcu memnuniyeti %70'in üzerine çıkacak!", "Our promise: rider satisfaction above 70%!", 0.4],
 	],
 }

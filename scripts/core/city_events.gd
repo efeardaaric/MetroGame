@@ -84,6 +84,8 @@ static func event_mods(active: Array) -> Dictionary:
 	for a in active:
 		if EVENTS.has(a["id"]):
 			mods = combine(mods, EVENTS[a["id"]]["mods"])
+		elif str(a["id"]).begins_with("re_"):
+			mods = combine(mods, RealEvents.mods_of(str(a["id"])))
 	return mods
 
 

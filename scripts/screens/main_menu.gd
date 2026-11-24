@@ -114,9 +114,12 @@ func _build_menu() -> void:
 	ssb.border_width_bottom = 10
 	sign.add_theme_stylebox_override("panel", ssb)
 	var sv := UI.vbox(0)
-	var title := UI.title(I18n.t("app_title").to_upper(), 84 if land else 100, Palette.CREAM)
+	var title := UI.title(I18n.t("app_title_main").to_upper(), 74 if land else 86, Palette.CREAM)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	sv.add_child(title)
+	var title2 := UI.title(I18n.t("app_title_sub").to_upper(), 40 if land else 46, Palette.ACCENT)
+	title2.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	sv.add_child(title2)
 	var stripe := Deco.LineStripe.new()
 	stripe.thickness = 9.0
 	stripe.custom_minimum_size = Vector2(420, 22)

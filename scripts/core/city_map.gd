@@ -80,21 +80,50 @@ func _build_geometry() -> void:
 		hills.append({"pos": project(h["lon"], h["lat"]), "h": h["h"], "r": h["r"]})
 
 
-## Moves vertices lying on the map frame well outside it, so coastline contours never
-## run along the edge of the map.
+## Moves vertices lying on the map frame far outside it, so the sea (and its
+## coast contours) keeps going beyond the playable area when zoomed out.
+## The last on-frame vertex next to the coast is kept as an anchor, so the
+## coastline inside the map is not bent by the push.
+const OUTER_KM := 30.0
+
+
+func _on_frame(q: Vector2) -> bool:
+	return q.x <= 0.15 or q.x >= size_km.x - 0.15 or q.y <= 0.15 or q.y >= size_km.y - 0.15
+
+
+func _far(q: Vector2) -> Vector2:
+	var o := q
+	if q.x <= 0.15:
+		o.x = -OUTER_KM
+	elif q.x >= size_km.x - 0.15:
+		o.x = size_km.x + OUTER_KM
+	if q.y <= 0.15:
+		o.y = -OUTER_KM
+	elif q.y >= size_km.y - 0.15:
+		o.y = size_km.y + OUTER_KM
+	return o
+
+
 func _push_out(poly: PackedVector2Array) -> PackedVector2Array:
 	var out := PackedVector2Array()
-	for p in poly:
-		var q := p
-		if q.x <= 0.15:
-			q.x = -4.0
-		elif q.x >= size_km.x - 0.15:
-			q.x = size_km.x + 4.0
-		if q.y <= 0.15:
-			q.y = -4.0
-		elif q.y >= size_km.y - 0.15:
-			q.y = size_km.y + 4.0
-		out.append(q)
+	var n := poly.size()
+	for i in n:
+		var p := poly[i]
+		if not _on_frame(p):
+			out.append(p)
+			continue
+		var prev_in := not _on_frame(poly[(i - 1 + n) % n])
+		var next_in := not _on_frame(poly[(i + 1) % n])
+		if prev_in and next_in:
+			out.append(p)
+			continue
+		if prev_in:
+			out.append(p)
+			out.append(p.lerp(_far(p), 0.02))
+		out.append(_far(p))
+		if next_in:
+			out.append(p.lerp(_far(p), 0.02))
+			out.append(p)
 	return out
 
 

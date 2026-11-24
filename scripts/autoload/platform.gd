@@ -73,10 +73,10 @@ func share_image(path: String, text: String) -> String:
 	var abs_path := ProjectSettings.globalize_path(path)
 	if _share:
 		if _share.has_method("share_image"):
-			_share.share_image(abs_path, "Ray Ağı", text, "image/png")
+			_share.share_image(abs_path, "Metro Tycoon: Türkiye", text, "image/png")
 			return ""
 		if _share.has_method("shareImage"):
-			_share.shareImage(abs_path, "Ray Ağı", text, "image/png")
+			_share.shareImage(abs_path, "Metro Tycoon: Türkiye", text, "image/png")
 			return ""
 	# fallback: copy into the Pictures folder where possible
 	var pics := OS.get_system_dir(OS.SYSTEM_DIR_PICTURES)

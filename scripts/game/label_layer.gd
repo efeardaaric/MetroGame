@@ -7,6 +7,8 @@ const PX := MapLayer.PX
 var city: CityMap
 var zoom := 1.0
 var dim := false
+var min_zoom := 0.05
+var year := 0
 
 
 func setup(c: CityMap) -> void:
@@ -47,8 +49,8 @@ func _draw() -> void:
 		draw_set_transform(pos, 0.0, Vector2(inv, inv))
 		draw_string_outline(f, Vector2(-size.x * 0.5, 0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, int(fs), 6, Color(Palette.LAND, 0.85 * a))
 		draw_string(f, Vector2(-size.x * 0.5, 0), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, int(fs), Color(Palette.LABEL, 0.85 * a))
-	# POIs
-	if zoom >= 0.09:
+	# POIs (icons always, names when closer)
+	if true:
 		for poi in city.pois:
 			var pos: Vector2 = poi["pos"] * PX
 			draw_set_transform(pos, 0.0, Vector2(inv, inv))
@@ -58,6 +60,21 @@ func _draw() -> void:
 				var s2 := f2.get_string_size(txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 20)
 				draw_string_outline(f2, Vector2(-s2.x * 0.5, 42), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, 6, Color(Palette.LAND, 0.9 * a))
 				draw_string(f2, Vector2(-s2.x * 0.5, 42), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 20, Color("3b4252", a))
+	# map title cartouche above the sheet, fading in as you zoom out
+	var ta := clampf(1.0 - (zoom / maxf(min_zoom, 0.001) - 1.0) / 0.9, 0.0, 1.0) * a
+	if ta > 0.01:
+		var name := I18n.t(city.data["name_key"]).to_upper()
+		var spaced := " ".join(name.split(""))
+		var fd := ThemeBuilder.display(800)
+		var top := Vector2(city.size_km.x * PX * 0.5, 0.0)
+		draw_set_transform(top, 0.0, Vector2(inv, inv))
+		var ts := fd.get_string_size(spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 54)
+		draw_string_outline(fd, Vector2(-ts.x * 0.5, -58), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 54, 10, Color(Palette.LAND, 0.9 * ta))
+		draw_string(fd, Vector2(-ts.x * 0.5, -58), spaced, HORIZONTAL_ALIGNMENT_LEFT, -1, 54, Color(Palette.INK, 0.85 * ta))
+		var sub := "— %d —" % year if year > 0 else ""
+		var ss := f.get_string_size(sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 24)
+		draw_string(f, Vector2(-ss.x * 0.5, -22), sub, HORIZONTAL_ALIGNMENT_LEFT, -1, 24, Color(Palette.INK, 0.6 * ta))
+		draw_line(Vector2(-ts.x * 0.5, -46), Vector2(ts.x * 0.5, -46), Color(Palette.ACCENT, 0.8 * ta), 4.0)
 	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
 
 

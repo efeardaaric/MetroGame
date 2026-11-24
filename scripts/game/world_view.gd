@@ -11,6 +11,10 @@ var draft: DraftLayer
 var flavor: FlavorLayer
 var growth: GrowthLayer
 var diagram_veil: DiagramVeil
+var events: EventFxLayer
+var _zoom_pending := -1.0
+var _zoom_applied_ms := -1000
+const ZOOM_REBUILD_MS := 110
 
 
 ## Cream "paper" laid over the geography in schematic mode.
@@ -50,6 +54,9 @@ func setup(s: GameState) -> void:
 	labels = LabelLayer.new()
 	add_child(labels)
 	labels.setup(s.city)
+	events = EventFxLayer.new()
+	add_child(events)
+	events.setup(s, map._roads)
 	diagram_veil = DiagramVeil.new()
 	diagram_veil.size_px = s.city.size_km * MapLayer.PX
 	diagram_veil.modulate.a = 0.0
@@ -80,6 +87,8 @@ func setup(s: GameState) -> void:
 	var z := camera.min_zoom * 1.25
 	camera.zoom = Vector2(z, z)
 	camera.zoom_changed.connect(_on_zoom)
+	labels.min_zoom = camera.min_zoom
+	labels.year = s.year
 	s.ridership_updated.connect(func(): network.queue_redraw())
 	get_viewport().size_changed.connect(_on_viewport_resized)
 	_on_zoom(z)
@@ -89,19 +98,37 @@ func _on_viewport_resized() -> void:
 	if camera == null:
 		return
 	camera.setup_bounds(Rect2(Vector2.ZERO, state.city.size_km * MapLayer.PX), get_viewport_rect().size)
+	labels.min_zoom = camera.min_zoom
 	if camera.zoom.x < camera.min_zoom:
 		camera.zoom = Vector2(camera.min_zoom, camera.min_zoom)
 	camera._clamp()
 
 
+## Cheap layers follow every zoom step; the expensive vector rebuilds (network,
+## water, roads, lights) are throttled while pinching and settle on the final zoom.
 func _on_zoom(z: float) -> void:
-	labels.set_zoom(z)
-	network.set_zoom(z)
 	vehicles.zoom = z
 	draft.zoom = z
+	events.set_zoom(z)
+	_zoom_pending = z
+	if Time.get_ticks_msec() - _zoom_applied_ms >= ZOOM_REBUILD_MS:
+		_apply_zoom()
+
+
+func _apply_zoom() -> void:
+	var z := _zoom_pending
+	_zoom_pending = -1.0
+	_zoom_applied_ms = Time.get_ticks_msec()
+	labels.set_zoom(z)
+	network.set_zoom(z)
 	flavor.set_zoom(z)
 	map.set_zoom(z)
 	lights.set_zoom(z)
+
+
+func _process(_d: float) -> void:
+	if _zoom_pending > 0.0 and Time.get_ticks_msec() - _zoom_applied_ms >= ZOOM_REBUILD_MS:
+		_apply_zoom()
 
 
 ## Advances the visual day/night cycle.
@@ -160,6 +187,7 @@ func set_diagram(on: bool) -> void:
 	tw.tween_property(labels, "modulate:a", 0.0 if on else 1.0, 0.3)
 	tw.tween_property(flavor, "modulate:a", 0.0 if on else 1.0, 0.3)
 	tw.tween_property(growth, "modulate:a", 0.0 if on else 1.0, 0.3)
+	tw.tween_property(events, "modulate:a", 0.0 if on else 1.0, 0.3)
 
 
 ## Quality switch for slower devices.
@@ -174,3 +202,5 @@ func apply_quality(high: bool) -> void:
 		lights.set_detail(high)
 	if flavor:
 		flavor.set_detail(high)
+	if events:
+		events.set_detail(high)

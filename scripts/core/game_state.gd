@@ -13,6 +13,8 @@ signal tech_completed(tech_id: String)
 signal construction_done(lid: int)
 signal scenario_finished(success: bool, stars: int, score: float)
 signal construction_overrun(lid: int, months: int)
+signal election_promise
+signal election_held(result: Dictionary)
 
 const START_YEAR := 2026
 const FARE := 10.0            # ₺ per linked trip
@@ -55,6 +57,9 @@ var research := {}              # {id, months, total} while a project runs
 var sandbox := false
 var build_log: Array = []       # timelapse: [{y, m, lid, mode, color, pts, op}]
 var active_events: Array = []   # [{id, months}]
+var calendar := EventCalendar.new()
+var elec := Elections.new()
+var lost_election := false
 var _ev_rng := RandomNumberGenerator.new()
 var async_demand := false   # GameScreen enables this so heavy recomputes run on a worker thread
 var _task_id := -1
@@ -67,6 +72,8 @@ func _init(id: String) -> void:
 	net = TransitNetwork.new(city)
 	demand = DemandModel.new(city, net)
 	cash = city.data["start_cash"]
+	start_year = int(city.data.get("start_year", 2010))
+	year = start_year
 	net.changed.connect(func(): dirty = true)
 	_ev_rng.randomize()
 	net.tech = researched
@@ -294,8 +301,18 @@ func _end_month() -> void:
 	_tick_research()
 	_tick_construction()
 	_check_scenario()
+	calendar.monthly(self)
 	mgmt.monthly(self)
 	feed.monthly(self)
+	if is_campaign():
+		var r := elec.monthly(self)
+		if r == "promise":
+			election_promise.emit()
+		elif r == "held":
+			if not elec.last_result.get("won", false):
+				lost_election = true
+				game_over = true
+			election_held.emit(elec.last_result)
 
 
 # ---------------------------------------------------------------- construction
@@ -375,6 +392,7 @@ func _tick_construction() -> void:
 				construction_overrun.emit(l["id"], delay)
 				continue
 			l.erase("con")
+			elec.on_line_opened()
 			dirty = true
 			net.changed.emit()
 			construction_done.emit(l["id"])
@@ -672,6 +690,7 @@ func to_dict() -> Dictionary:
 		"feed": feed.to_dict(), "events": active_events,
 		"mgmt": mgmt.to_dict(), "start_year": start_year, "scenario": scenario, "grant_mult": grant_mult,
 		"scenario_done": scenario_done, "researched": researched, "research": research, "sandbox": sandbox, "build_log": build_log,
+		"calendar": calendar.to_dict(), "elec": elec.to_dict(), "lost_election": lost_election,
 	}
 
 
@@ -711,6 +730,10 @@ func from_dict(d: Dictionary) -> void:
 	sandbox = d.get("sandbox", false)
 	build_log = d.get("build_log", [])
 	active_events = d.get("events", [])
+	calendar.from_dict(d.get("calendar", {}))
+	elec.from_dict(d.get("elec", {}))
+	lost_election = d.get("lost_election", false)
+	calendar._sync_zones(self)
 	_update_mods()
 	dirty = true
 	recompute_if_dirty()

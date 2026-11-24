@@ -141,8 +141,6 @@ func _draw() -> void:
 		_ring(ring, coast, maxf(3.0, _px(1.3)))
 	for isl in _islands:
 		_ring(isl, coast, maxf(3.0, _px(1.3)))
-	# map frame
-	draw_rect(Rect2(Vector2.ZERO, city.size_km * PX), Color(0, 0, 0, 0.12), false, maxf(6.0, _px(2.0)))
 
 
 func _ring(poly: PackedVector2Array, c: Color, w: float) -> void:

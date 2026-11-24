@@ -14,7 +14,52 @@ var city: CityMap
 var hillshade: Sprite2D
 var heat: Sprite2D
 var water: WaterLayer
+var roads: RoadNet
+var edge: EdgeFade
 var _heat_cache := {}
+var _glow: Texture2D
+
+
+## Arterial roads, redrawn so they keep a readable width at every zoom level.
+class RoadNet:
+	extends Node2D
+	var layer: MapLayer
+	var zoom := 0.2
+	func set_zoom(z: float) -> void:
+		if absf(z - zoom) / zoom > 0.1:
+			zoom = z
+			queue_redraw()
+	func _draw() -> void:
+		var inv := 1.0 / clampf(zoom, 0.03, 3.0)
+		for r in layer._roads:
+			draw_polyline(r[0], Color("d9ccb2"), maxf(26.0 if r[1] else 18.0, (4.2 if r[1] else 3.0) * inv), true)
+		for r in layer._roads:
+			draw_polyline(r[0], Color("fbf6ea"), maxf(16.0 if r[1] else 10.0, (2.6 if r[1] else 1.7) * inv), true)
+
+
+## Soft cartographic vignette around the playable area, drawn above the sea,
+## so zooming out shows the city fading into its surroundings, not a hard frame.
+class EdgeFade:
+	extends Node2D
+	var size_px := Vector2.ONE
+	func _draw() -> void:
+		var d := 9.0 * MapLayer.PX
+		var far := 45.0 * MapLayer.PX
+		var c0 := Color(0.87, 0.83, 0.75, 0.0)
+		var c1 := Color(0.87, 0.83, 0.75, 0.82)
+		var w := size_px.x
+		var h := size_px.y
+		var cols := PackedColorArray([c0, c0, c1, c1])
+		draw_polygon(PackedVector2Array([Vector2(0, 0), Vector2(w, 0), Vector2(w + d, -d), Vector2(-d, -d)]), cols)
+		draw_polygon(PackedVector2Array([Vector2(w, 0), Vector2(w, h), Vector2(w + d, h + d), Vector2(w + d, -d)]), cols)
+		draw_polygon(PackedVector2Array([Vector2(w, h), Vector2(0, h), Vector2(-d, h + d), Vector2(w + d, h + d)]), cols)
+		draw_polygon(PackedVector2Array([Vector2(0, h), Vector2(0, 0), Vector2(-d, -d), Vector2(-d, h + d)]), cols)
+		draw_rect(Rect2(-far, -far, w + 2 * far, far - d), c1)
+		draw_rect(Rect2(-far, h + d, w + 2 * far, far - d), c1)
+		draw_rect(Rect2(-far, -d, far - d, h + 2 * d), c1)
+		draw_rect(Rect2(w + d, -d, far - d, h + 2 * d), c1)
+		# hairline neatline, like a printed map sheet
+		draw_rect(Rect2(Vector2(-d * 0.35, -d * 0.35), size_px + Vector2(d, d) * 0.7), Color(0.45, 0.38, 0.28, 0.35), false, 10.0)
 
 
 func setup(c: CityMap) -> void:
@@ -22,6 +67,20 @@ func setup(c: CityMap) -> void:
 	var t0 := Time.get_ticks_msec()
 	_add_grain()
 	_build_land_deco()
+	var g := Gradient.new()
+	g.set_color(0, Color(1, 1, 1, 1))
+	g.set_color(1, Color(1, 1, 1, 0))
+	var gt := GradientTexture2D.new()
+	gt.gradient = g
+	gt.fill = GradientTexture2D.FILL_RADIAL
+	gt.fill_from = Vector2(0.5, 0.5)
+	gt.fill_to = Vector2(1.0, 0.5)
+	gt.width = 64
+	gt.height = 64
+	_glow = gt
+	roads = RoadNet.new()
+	roads.layer = self
+	add_child(roads)
 	print_verbose("map deco ms ", Time.get_ticks_msec() - t0)
 	_build_hillshade()
 	heat = Sprite2D.new()
@@ -32,12 +91,17 @@ func setup(c: CityMap) -> void:
 	water = WaterLayer.new()
 	water.city = c
 	add_child(water)
+	edge = EdgeFade.new()
+	edge.size_px = c.size_km * PX
+	add_child(edge)
 	queue_redraw()
 
 
 func set_zoom(z: float) -> void:
 	if water:
 		water.set_zoom(z)
+	if roads:
+		roads.set_zoom(z)
 
 
 ## Loads a baked raster (or builds it) and returns a mipmapped, linearly filtered texture.
@@ -289,8 +353,16 @@ func _draw() -> void:
 	if city == null:
 		return
 	var sz := city.size_km * PX
-	draw_rect(Rect2(Vector2(-4000, -4000), sz + Vector2(8000, 8000)), Palette.LAND_DARK)
-	draw_rect(Rect2(Vector2.ZERO, sz), Palette.LAND)
+	draw_rect(Rect2(Vector2(-5000, -5000), sz + Vector2(10000, 10000)), Palette.LAND)
+	# built-up area: a warm wash under every district, so the city reads as a
+	# continuous urban mass when zoomed out
+	for z in city.zones:
+		var amount: float = z["base_pop"] + z["base_jobs"]
+		if amount <= 0.0 or z["poi_id"] != "":
+			continue
+		var r: float = maxf(0.8, float(z["r"])) * 1.9 * PX
+		var a := clampf(0.18 + amount / 900.0, 0.18, 0.5)
+		draw_texture_rect(_glow, Rect2(z["pos"] * PX - Vector2(r, r), Vector2(r, r) * 2.0), false, Color(0.83, 0.74, 0.6, a))
 	# forests
 	for pk in city.park_polys:
 		var poly := scaled(pk)
@@ -301,11 +373,6 @@ func _draw() -> void:
 		draw_circle(t + Vector2(4, 5), 11.0, Color(0.3, 0.45, 0.25, 0.18))
 		draw_circle(t, 10.0, Color("a9cc93"))
 		draw_circle(t + Vector2(-3, -3), 4.0, Color("c4ddb0"))
-	# roads (under blocks' edges looks like a printed map)
-	for r in _roads:
-		draw_polyline(r[0], Color("d9ccb2"), 26.0 if r[1] else 18.0, true)
-	for r in _roads:
-		draw_polyline(r[0], Color("fbf6ea"), 16.0 if r[1] else 10.0, true)
 	# urban blocks
 	for b in _blocks:
 		draw_colored_polygon(b[0], b[1])

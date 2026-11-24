@@ -79,6 +79,7 @@ func _run() -> void:
 	print("  after 3y: year %d cash %.0f riders %.0f profit %.0f" % [st.year, st.cash, st.riders, st.last_year_profit])
 	print("  feed posts %d approval %.1f events %s" % [st.feed.posts.size(), st.feed.approval, str(st.active_events)])
 	check(st.feed.posts.size() > 5, "social feed produced posts")
+	print("  projected vote with this network: ", st.elec.vote(st), " coverage ", st.demand.coverage)
 	for i in mini(5, st.feed.posts.size()):
 		print("    @%s: %s (%d likes)" % [st.feed.posts[i]["who"]["handle"], st.feed.posts[i]["tr"], st.feed.posts[i]["likes"]])
 	check(SocialFeed.tr_suffix("M1", "da") == "de", "M1'de")
@@ -89,9 +90,9 @@ func _run() -> void:
 	check(SocialFeed.tr_suffix("Kadıköy", "dan") == "den", "Kadıköy'den")
 	# research
 	var r_st := GameState.new("istanbul")
-	check(r_st.tech_state("driverless") == "locked_year", "driverless locked until 2030")
+	check(r_st.tech_state("driverless") == "locked_year", "driverless locked until 2017")
 	check(r_st.start_research("contactless"), "start contactless research")
-	check(r_st.tech_state("realtime") == "busy", "one project at a time")
+	check(r_st.tech_state("ac_fleet") == "busy", "one project at a time")
 	var inc0 := r_st.monthly_income()
 	for i in 3:
 		r_st._end_month()
@@ -324,6 +325,58 @@ func _run() -> void:
 	var dt := Time.get_ticks_msec() - t2
 	print("  %d lines %d stations -> riders %.0f, compute %d ms" % [big.net.lines.size(), big.net.stations.size(), big.target_riders, dt])
 	check(dt < 1500, "large network demand compute under 1.5s on desktop")
+
+	# ---------------------------------------------------------------- start years, events, elections
+	print("elections & real events")
+	var es := GameState.new("ankara")
+	check(es.year == 2010 and es.start_year == 2010, "campaign starts in 2010")
+	check(es.elec.next_year(es) == 2014, "first election March 2014")
+	check(es.elec.months_left(es) == 50, "50 months to the 2014 vote")
+	var held: Array = []
+	es.election_held.connect(func(r): held.append(r))
+	var promised := [false]
+	es.election_promise.connect(func(): promised[0] = true)
+	var ann: Array = []
+	es.calendar.announced.connect(func(e, left): ann.append(e["id"]))
+	es.calendar.monthly(es)
+	while es.year * 12 + es.month < 2014 * 12 + 2 and not es.game_over:
+		es._end_month()
+	check(promised[0], "promise offered 14 months before the vote")
+	check(held.size() == 1, "election held in March 2014")
+	print("  empty-network vote: %.1f %s" % [held[0]["share"] if held.size() > 0 else -1.0, str(held[0]["parts"] if held.size() > 0 else {})])
+	check(held.size() > 0 and not held[0]["won"], "doing nothing loses the election")
+	check(es.game_over and es.lost_election, "lost election ends the game")
+	var d2 := es.to_dict()
+	var es2 := GameState.new("ankara")
+	es2.from_dict(d2)
+	check(es2.lost_election and es2.elec.last_result.get("year", 0) == 2014, "election result persists")
+	# Antalya: G20 2015 announced a year ahead; a station at the venue earns the reward
+	var an := GameState.new("antalya")
+	var an_ann: Array = []
+	an.calendar.announced.connect(func(e, left): an_ann.append(e["id"]))
+	while an.year * 12 + an.month < 2015 * 12 + 9:
+		an._end_month()
+	check(an_ann.has("ant_g20"), "G20 announced in advance")
+	check(an_ann.has("ant_expo"), "EXPO 2016 announced in advance")
+	var g20 := RealEvents.get_event("ant_g20")
+	var vp := an.calendar.venue_pos(an, g20)
+	var lid := build(an, "tram", false, [vp + Vector2(-2.5, 0.3), vp + Vector2(-0.2, 0.0)])
+	check(lid >= 0 and an.calendar.is_served(an, g20), "venue served by the new tram")
+	var cash0 := an.cash
+	while an.year * 12 + an.month < 2015 * 12 + 10:
+		an._end_month()
+	check(an.calendar.done.get("ant_g20", "") == "ok", "G20 prepared -> ok")
+	check(an.has_event("re_ant_g20"), "G20 is active this month")
+	print("  cash %.0f -> %.0f" % [cash0, an.cash])
+	# COVID hits every city in March 2020
+	while an.year * 12 + an.month < 2020 * 12 + 3 and not an.game_over:
+		an._end_month()
+	check(an.has_event("re_covid") or an.game_over, "pandemic active spring 2020")
+	var imp := 0
+	for p in an.feed.posts:
+		if p.get("imp", false):
+			imp += 1
+	check(imp > 0, "important posts flagged for pop-ups")
 
 	print("total ms ", Time.get_ticks_msec() - t0)
 	print("FAILURES: ", failures)

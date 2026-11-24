@@ -83,7 +83,7 @@ func _draw() -> void:
 		var x := i * cw
 		draw_string(ThemeBuilder.led(850), Vector2(x, y + 110), stats[i][0], HORIZONTAL_ALIGNMENT_CENTER, cw, 64, Palette.LED)
 		draw_string(ThemeBuilder.font(700), Vector2(x, y + 160), stats[i][1], HORIZONTAL_ALIGNMENT_CENTER, cw, 24, Palette.MUTED)
-	draw_string(ThemeBuilder.display(800), Vector2(0, h - 34), "RAY AĞI", HORIZONTAL_ALIGNMENT_CENTER, w, 34, Palette.ACCENT)
+	draw_string(ThemeBuilder.display(800), Vector2(0, h - 34), "METRO TYCOON: TÜRKİYE", HORIZONTAL_ALIGNMENT_CENTER, w, 34, Palette.ACCENT)
 
 
 ## Renders the poster off-screen and saves it as PNG. Returns the user:// path.

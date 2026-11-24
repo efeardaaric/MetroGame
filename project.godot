@@ -1,11 +1,11 @@
 ; Engine configuration file.
-; Ray Ağı — Metro Builder (Godot 4.3)
+; Metro Tycoon: Türkiye — Metro Builder (Godot 4.3)
 
 config_version=5
 
 [application]
 
-config/name="Ray Ağı: Metro Kur"
+config/name="Metro Tycoon: Türkiye"
 config/description="İstanbul, Ankara ve İzmir'de kendi raylı sistem ağını kur."
 config/version="1.0.0"
 run/main_scene="res://scenes/main.tscn"

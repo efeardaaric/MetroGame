@@ -2,7 +2,8 @@
 
 ## Türkçe
 
-**Ad:** Ray Ağı: Metro Kur
+**Ad:** Metro Tycoon: Türkiye
+**Alt başlık (30):** Şehir Ulaşım Simülatörü
 **Kısa açıklama (80):** İstanbul, Ankara ve İzmir'de kendi metro ağını kur, şehri raylarla ör!
 
 **Uzun açıklama:**
@@ -14,16 +15,18 @@ haritalarında metro, tramvay, metrobüs, banliyö, füniküler ve vapur hatlar�
 • Nüfus ve çekim haritalarına bakarak yolcunun nereden nereye gittiğini keşfet.
 • Araç sayısını ve sefer sıklığını ayarla, depo kapasitesini büyüt, kalabalığı önle.
 • Bilet gelirini, belediye desteğini ve işletme giderlerini dengele; yıl sonu raporunu bekle.
+• 2010'dan başla, gerçek takvimdeki yerel seçimleri kazan; NATO Zirvesi, COP31, EXPO gibi gerçek etkinliklere şehri hazırla.
 • Şehir hedeflerini tamamla, yıldız topla, yeni şehirlerin kilidini aç.
 • Reklam yok, uygulama içi satın alma yok. Çevrimdışı oynanır.
 
 Dokunmatik için tasarlandı: tek parmakla gez, iki parmakla yakınlaş, dokunarak durak koy.
 
-**Anahtar kelimeler:** metro, tren, ulaşım, şehir, strateji, harita, istanbul, simülasyon, raylı sistem
+**Anahtar kelimeler (100):** metro,tren,tycoon,ulaşım,şehir kurma,simülatör,istanbul,ankara,seçim,strateji,raylı sistem,tramvay
 
 ## English
 
-**Name:** Ray Ağı: Metro Builder
+**Name:** Metro Tycoon: Türkiye
+**Subtitle (30):** City Transit Simulator
 **Short description:** Build your own metro network in Istanbul, Ankara and Izmir.
 
 **Full description:**

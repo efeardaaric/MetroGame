@@ -47,6 +47,8 @@ var auto_quality := true
 var _amb_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 var _last_viral_toast := -100000
+var agenda: AgendaUI
+var _hq_session := true
 
 var speed_idx := 1
 var modal_count := 0
@@ -98,10 +100,15 @@ func _ready() -> void:
 	root_ui.move_child(weather, 0)
 	confetti = Confetti.new()
 	root_ui.add_child(confetti)
+	var decor := MapDecor.new()
+	decor.g = self
+	root_ui.add_child(decor)
+	root_ui.move_child(decor, 1)
 	state.construction_done.connect(_on_construction_done)
 	state.construction_overrun.connect(_on_overrun)
 	state.scenario_finished.connect(_on_scenario_finished)
 	world.apply_quality(Settings.high_quality)
+	_hq_session = Settings.high_quality
 	_rng.randomize()
 	state.event_started.connect(_on_city_event)
 	state.tech_completed.connect(_on_tech_done)
@@ -113,6 +120,10 @@ func _ready() -> void:
 	ach_banner = AchievementBanner.new()
 	root_ui.add_child(ach_banner)
 	state.feed.post_added.connect(_on_post)
+	state.calendar.announced.connect(agenda.on_announced)
+	state.calendar.started.connect(agenda.on_started)
+	state.election_promise.connect(func(): _queue_modal(agenda.promise_modal))
+	state.election_held.connect(agenda.on_election)
 	if state.feed.posts.is_empty():
 		state.feed.post("no_network", {}, state, "citizen")
 		state.feed.post("no_network", {}, state, "citizen")
@@ -135,7 +146,21 @@ func _ready() -> void:
 	if state.tutorial_step < 6 and not SaveManager.progress.get("tutorial_done", false):
 		call_deferred("_show_tutorial")
 	if state.game_over:
-		call_deferred("_on_bankrupt")
+		if state.lost_election:
+			agenda.call_deferred("on_election", state.elec.last_result)
+		else:
+			call_deferred("_on_bankrupt")
+	elif state.history.is_empty() and state.month == 0 and state.year == state.start_year:
+		# a fresh game: announce events that are already on the horizon
+		state.calendar.call_deferred("monthly", state)
+
+
+## Shows a dialog as soon as no other dialog or build is in progress.
+func _queue_modal(cb: Callable) -> void:
+	if modal_count > 0 or build_mode != "":
+		get_tree().create_timer(1.0).timeout.connect(_queue_modal.bind(cb))
+		return
+	cb.call()
 
 
 func _focus_initial() -> void:
@@ -234,6 +259,8 @@ func _build_hud() -> void:
 	mission_chip.add_child(mh)
 	mission_chip.visible = false
 	hud.add_child(mission_chip)
+	agenda = AgendaUI.new(self)
+	agenda.build(hud)
 
 
 ## Departure-board panel: near-black with a bezel.
@@ -511,6 +538,7 @@ func _process(delta: float) -> void:
 	elif world.camera.offset != Vector2.ZERO:
 		world.camera.offset = Vector2.ZERO
 	world.vehicles.speed = sp if sp > 0.0 else 0.0
+	world.events.speed = sp
 	_hud_timer += delta
 	if _hud_timer > 0.25:
 		_hud_timer = 0.0
@@ -524,11 +552,11 @@ func _process(delta: float) -> void:
 			fps_label.text = "%d FPS" % Engine.get_frames_per_second()
 		fps_label.visible = Settings.show_fps
 	# adaptive quality: drop decorative effects if the device struggles
-	if auto_quality and Settings.high_quality and Engine.get_frames_per_second() > 0 and Engine.get_frames_per_second() < 38:
+	# (session only: the saved setting stays on, the next launch tries high quality again)
+	if auto_quality and _hq_session and Engine.get_frames_per_second() > 0 and Engine.get_frames_per_second() < 26:
 		_fps_low_time += delta
-		if _fps_low_time > 6.0:
-			Settings.high_quality = false
-			Settings.save_settings()
+		if _fps_low_time > 10.0:
+			_hq_session = false
 			world.apply_quality(false)
 			toast.show_msg(I18n.t("quality_auto"), "info", 4.0)
 	else:
@@ -792,12 +820,9 @@ func _on_post(p: Dictionary) -> void:
 	_update_badge()
 	if p.get("viral", false) and float(p["sent"]) > 0.5:
 		check_achievements({"viral": true})
-	if p.get("viral", false) and Time.get_ticks_msec() - _last_viral_toast > 15000:
-		_last_viral_toast = Time.get_ticks_msec()
-		var txt := state.feed.text_of(p)
-		if txt.length() > 90:
-			txt = txt.substr(0, 88) + "…"
-		toast.show_msg("@%s: %s" % [p["who"]["handle"], txt], "social", 4.0)
+	var social_open := is_instance_valid(sheet) and sheet.title_label and is_instance_valid(sheet.title_label) and sheet.title_label.text == I18n.t("social_title")
+	if p.get("imp", false) and not social_open and agenda:
+		agenda.push_post(p)
 
 
 func _on_dilemma(ev: Dictionary) -> void:
@@ -881,6 +906,7 @@ func _on_mission_result(ok: bool, m: Dictionary) -> void:
 
 
 func _on_city_event(eid: String) -> void:
+	world.events.refresh()
 	toast.show_msg(I18n.t("event_" + eid), "info", 4.5)
 	Audio.play("chime", 1.0, -6.0)
 	world.labels.queue_redraw()
@@ -1345,6 +1371,10 @@ func _input(event: InputEvent) -> void:
 
 func _on_month() -> void:
 	_update_hud()
+	if agenda:
+		agenda.refresh()
+		agenda.monthly_warning()
+	world.events.refresh()
 	_update_mission_chip()
 	check_achievements()
 	if state.debt_months > 0:
@@ -1353,6 +1383,8 @@ func _on_month() -> void:
 
 
 func _on_year_ended(report: Dictionary) -> void:
+	world.labels.year = state.year
+	world.labels.queue_redraw()
 	Audio.play("year")
 	world.map.invalidate_overlay()
 	if overlay != "none":

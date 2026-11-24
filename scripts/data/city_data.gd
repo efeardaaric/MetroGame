@@ -258,7 +258,7 @@ static func _ankara() -> Dictionary:
 				{"kind": "fortress", "lon": 32.864, "lat": 39.9405, "name_key": "decor_kale"},
 			],
 			"bridges": [],
-			"events": ["snow_storm", "rain", "concert"],
+			"events": ["snow_storm", "rain", "concert", "derby"],
 			"chatter": "flavor_ankara",
 		},
 		"goals": [
@@ -355,7 +355,7 @@ static func _izmir() -> Dictionary:
 				{"kind": "fortress", "lon": 27.142, "lat": 38.4135, "name_key": "decor_kadifekale"},
 			],
 			"bridges": [],
-			"events": ["imbat", "rain", "concert"],
+			"events": ["imbat", "rain", "concert", "derby"],
 			"chatter": "flavor_izmir",
 		},
 		"goals": [
@@ -524,7 +524,7 @@ static func _bursa() -> Dictionary:
 		"flavor": {"birds": [], "ambience": ["city"], "winter_months": [11, 0, 1], "ski_poi": "uludag_ski",
 			"university_pois": ["uludag_uni"],
 			"decor": [{"kind": "fortress", "lon": 29.052, "lat": 40.187, "name_key": "decor_tophane"}],
-			"bridges": [], "events": ["rain", "snow_storm", "concert"], "chatter": "flavor_bursa"},
+			"bridges": [], "events": ["rain", "snow_storm", "concert", "derby"], "chatter": "flavor_bursa"},
 		"goals": [
 			{"id": "riders_50k", "type": "riders", "value": 50000},
 			{"id": "gondola_uludag", "type": "mode_riders", "mode": "gondola", "value": 2000},
@@ -579,7 +579,7 @@ static func _trabzon() -> Dictionary:
 		],
 		"flavor": {"birds": [{"kind": "gull", "count": 8}], "ambience": ["sea", "city"], "ferry_horn": true,
 			"decor": [{"kind": "fortress", "lon": 39.715, "lat": 41.004, "name_key": "decor_trb_kale"}],
-			"bridges": [], "events": ["rain", "concert"], "chatter": "flavor_trabzon"},
+			"bridges": [], "events": ["rain", "concert", "derby"], "chatter": "flavor_trabzon"},
 		"goals": [
 			{"id": "riders_15k", "type": "riders", "value": 15000},
 			{"id": "boztepe", "type": "serve_pois", "pois": ["boztepe"]},

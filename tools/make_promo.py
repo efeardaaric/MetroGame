@@ -62,7 +62,7 @@ TEXT = {
         "izmir": ("İZMİR", "körfez vapurları"),
         "bursa": ("BURSA", "Uludağ teleferiği"),
         "trabzon": ("TRABZON", "dağ ile deniz arası"),
-        "end": ("RAY AĞI", "YAKINDA · App Store & Google Play"),
+        "end": ("METRO TYCOON", "YAKINDA · App Store & Google Play"),
         "badge": "7 ŞEHİR · 7 SİSTEM",
     },
     "en": {
@@ -77,7 +77,7 @@ TEXT = {
         "izmir": ("IZMIR", "gulf ferries"),
         "bursa": ("BURSA", "Uludağ gondola"),
         "trabzon": ("TRABZON", "between mountain and sea"),
-        "end": ("RAY AĞI", "COMING SOON · App Store & Google Play"),
+        "end": ("METRO TYCOON", "COMING SOON · App Store & Google Play"),
         "badge": "7 CITIES · 7 SYSTEMS",
     },
 }
@@ -92,7 +92,7 @@ VO = {
         "crisis": "Grev, deprem, arıza. Kriz senin elinde.",
         "diagram": "Ağını bir sanat eserine çevir.",
         "ankara": "Yedi şehir. Yedi sistem.",
-        "end": "Ray Ağı. Çok yakında.",
+        "end": "Metro Tycoon Türkiye. Çok yakında.",
     },
 }
 

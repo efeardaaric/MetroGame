@@ -5,6 +5,7 @@ extends RefCounted
 signal post_added(post: Dictionary)
 
 const MAX_POSTS := 80
+const IMPORTANT := ["quake_major", "ev_derby", "ev_bridge_traffic", "ev_snow", "con_overrun", "archaeology", "official_open"]
 
 var posts: Array = []      # newest first
 var unread := 0
@@ -140,6 +141,7 @@ func post(category: String, vars: Dictionary, state: GameState, author: String =
 		"liked": false,
 		"cat": category,
 		"viral": viral,
+		"imp": viral or category.begins_with("re_") or category.begins_with("elec_") or category in IMPORTANT,
 	}
 	_next_id += 1
 	posts.push_front(p)
