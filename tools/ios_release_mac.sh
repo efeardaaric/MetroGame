@@ -22,6 +22,8 @@ OUT="$ROOT/build/ios_release"
 
 mkdir -p "$CACHE"
 rm -rf "$OUT" && mkdir -p "$OUT"
+# Keep Godot from importing/exporting build output (old Xcode projects, PNGs in DerivedData).
+touch "$ROOT/build/.gdignore"
 
 if [ ! -x "$GODOT" ]; then
   echo "==> Downloading Godot $GODOT_VERSION"
@@ -50,6 +52,10 @@ echo "==> Exporting Xcode project (release, build $BUILD)"
 "$GODOT" --headless --path . --export-release "iOS" "$OUT/MetroTycoon.ipa"
 PROJ="$(ls -d "$OUT"/*.xcodeproj | head -1)"
 SCHEME="$(basename "$PROJ" .xcodeproj)"
+# Godot hard-codes "iPhone Distribution"/"iPhone Developer" identities, which conflict with
+# automatic signing. Use the automatic "Apple Development" identity for the archive.
+sed -i '' -e 's/"iPhone Distribution"/"Apple Development"/g' -e 's/"iPhone Developer"/"Apple Development"/g' \
+  "$PROJ/project.pbxproj"
 
 AUTH=()
 if [ -n "${ASC_KEY_ID:-}" ] && [ -n "${ASC_ISSUER_ID:-}" ] && [ -n "${ASC_KEY_PATH:-}" ]; then
@@ -62,6 +68,7 @@ xcodebuild -project "$PROJ" -scheme "$SCHEME" -configuration Release \
   -allowProvisioningUpdates ${AUTH[@]+"${AUTH[@]}"} \
   DEVELOPMENT_TEAM="$TEAM_ID" PRODUCT_BUNDLE_IDENTIFIER="$BUNDLE_ID" CODE_SIGN_STYLE=Automatic \
   archive
+# The archive is development-signed; -exportArchive below re-signs it for App Store distribution.
 
 cat > "$OUT/ExportOptions.plist" <<PLIST
 <?xml version="1.0" encoding="UTF-8"?>

@@ -24,6 +24,8 @@ func _ready() -> void:
 	add_child(main)
 	if mode == "trailer":
 		_trailer()
+	elif mode == "banner":
+		_banner()
 	else:
 		_shots()
 
@@ -132,6 +134,45 @@ func _shots() -> void:
 	g.show_modal(g.panels.profile_modal(lid))
 	await wait(1.5)
 	await shot("08_profile")
+	get_tree().quit()
+
+
+## Wide, UI-free map art for the App Store header (21:9) and search-results (3:2) assets.
+## Render at the largest window that fits the screen, then upscale to the store size.
+##   godot --path . --resolution 2880x1234 tools/store_media.tscn -- --mode=banner --out=DIR --name=header --zoom=0.19
+func _banner() -> void:
+	var name := "banner"
+	var zoom := 0.19
+	var lon := 28.995
+	var lat := 41.03
+	for a in OS.get_cmdline_user_args():
+		if a.begins_with("--name="):
+			name = a.substr(7)
+		if a.begins_with("--zoom="):
+			zoom = float(a.substr(7))
+		if a.begins_with("--lon="):
+			lon = float(a.substr(6))
+		if a.begins_with("--lat="):
+			lat = float(a.substr(6))
+	await wait(1.0)
+	await _setup_network()
+	for l in g.state.net.lines.values():
+		l["vehicles"] = mini(int(l["vehicles"]), 6)
+	g.state.active_events.clear()
+	g.state.dirty = true
+	g.state.recompute_if_dirty()
+	g.world.events.refresh()
+	g._set_speed(1)
+	g.ui_layer.visible = false
+	g.world.day_t = 0.42
+	_cam(lon, lat, zoom)
+	await wait(2.5)
+	g._set_speed(0)
+	# no event / announcement labels on store art
+	g.world.events._venues.clear()
+	g.world.events.queue_redraw()
+	await wait(0.5)
+	await shot(name)
 	get_tree().quit()
 
 
