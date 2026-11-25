@@ -152,6 +152,7 @@ static func _istanbul() -> Dictionary:
 				{"kind": "tower", "lon": 28.9741, "lat": 41.0256, "name_key": "decor_galata"},
 				{"kind": "islet_tower", "lon": 29.0041, "lat": 41.0211, "name_key": "decor_kizkulesi"},
 				{"kind": "fortress", "lon": 29.0515, "lat": 41.085, "name_key": "decor_rumelihisari"},
+				{"kind": "mosque", "lon": 28.9768, "lat": 41.0054, "name_key": "decor_sultanahmet"},
 			],
 			"bridges": [
 				{"a": [29.013, 41.0475], "b": [29.036, 41.0425], "name_key": "bridge_15temmuz"},
@@ -256,6 +257,7 @@ static func _ankara() -> Dictionary:
 			"decor": [
 				{"kind": "tower", "lon": 32.857, "lat": 39.886, "name_key": "decor_atakule"},
 				{"kind": "fortress", "lon": 32.864, "lat": 39.9405, "name_key": "decor_kale"},
+				{"kind": "fortress", "lon": 32.8369, "lat": 39.9251, "name_key": "decor_anitkabir"},
 			],
 			"bridges": [],
 			"events": ["snow_storm", "rain", "concert", "derby"],
@@ -353,6 +355,7 @@ static func _izmir() -> Dictionary:
 			"decor": [
 				{"kind": "tower", "lon": 27.1225, "lat": 38.4095, "name_key": "decor_asansor"},
 				{"kind": "fortress", "lon": 27.142, "lat": 38.4135, "name_key": "decor_kadifekale"},
+				{"kind": "tower", "lon": 27.1287, "lat": 38.4189, "name_key": "decor_saatkulesi"},
 			],
 			"bridges": [],
 			"events": ["imbat", "rain", "concert", "derby"],
@@ -468,7 +471,8 @@ static func _antalya() -> Dictionary:
 		],
 		"flavor": {"birds": [{"kind": "gull", "count": 10}], "ambience": ["sea", "city"], "summer_months": [5, 6, 7, 8],
 			"tourism": true,
-			"decor": [{"kind": "tower", "lon": 30.704, "lat": 36.884, "name_key": "decor_hidirlik"}],
+			"decor": [{"kind": "tower", "lon": 30.704, "lat": 36.884, "name_key": "decor_hidirlik"},
+				{"kind": "tower", "lon": 30.7037, "lat": 36.8853, "name_key": "decor_yivli"}],
 			"bridges": [], "events": ["rain", "concert"], "chatter": "flavor_antalya"},
 		"goals": [
 			{"id": "riders_40k", "type": "riders", "value": 40000},
@@ -523,7 +527,8 @@ static func _bursa() -> Dictionary:
 		],
 		"flavor": {"birds": [], "ambience": ["city"], "winter_months": [11, 0, 1], "ski_poi": "uludag_ski",
 			"university_pois": ["uludag_uni"],
-			"decor": [{"kind": "fortress", "lon": 29.052, "lat": 40.187, "name_key": "decor_tophane"}],
+			"decor": [{"kind": "fortress", "lon": 29.052, "lat": 40.187, "name_key": "decor_tophane"},
+				{"kind": "mosque", "lon": 29.0617, "lat": 40.1839, "name_key": "decor_ulucami"}],
 			"bridges": [], "events": ["rain", "snow_storm", "concert", "derby"], "chatter": "flavor_bursa"},
 		"goals": [
 			{"id": "riders_50k", "type": "riders", "value": 50000},

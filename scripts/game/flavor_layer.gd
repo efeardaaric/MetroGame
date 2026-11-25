@@ -14,6 +14,10 @@ var _rng := RandomNumberGenerator.new()
 var _water_pts: PackedVector2Array = PackedVector2Array()
 var _t := 0.0
 var _bird_node: BirdDraw
+var _sprites := {}        # decor id -> Texture2D
+var _sprite_meta := {}    # decor id -> {ax, ay}
+const SPRITE_UNIT := 1.15  # world px per baked sprite px (32 px = 1 model unit)
+const SPRITE_ZOOM := Vector2(0.2, 0.3) # fade the 3D models in between these zooms
 
 
 class BirdDraw:
@@ -35,6 +39,7 @@ func setup(c: CityMap) -> void:
 		_bridges.append([c.project(b["a"][0], b["a"][1]) * PX, c.project(b["b"][0], b["b"][1]) * PX, b["name_key"]])
 	for d in f.get("decor", []):
 		_decor.append({"kind": d["kind"], "pos": c.project(d["lon"], d["lat"]) * PX, "name_key": d["name_key"]})
+	_load_sprites()
 	# sample open-water points for the gulls to roam between (near the coast is nicer)
 	var tries := 0
 	while _water_pts.size() < 60 and tries < 4000:
@@ -126,10 +131,34 @@ func _draw() -> void:
 			draw_circle(p, w * 0.75, Color(0.5, 0.2, 0.15))
 		if zoom > 0.2:
 			_label((a + b) * 0.5 + Vector2(0, -22) * inv, I18n.t(br[2]), inv, Color(0.25, 0.28, 0.35))
-	# landmarks
-	for d in _decor:
+	# landmarks: little 3D models up close, flat map symbols further out
+	var sa := clampf((zoom - SPRITE_ZOOM.x) / (SPRITE_ZOOM.y - SPRITE_ZOOM.x), 0.0, 1.0)
+	var order := _decor.duplicate()
+	order.sort_custom(func(a, b): return a["pos"].y < b["pos"].y)
+	for d in order:
 		var p: Vector2 = d["pos"]
+		var id := str(d["name_key"]).trim_prefix("decor_")
+		if sa > 0.0 and _sprites.has(id):
+			var tex: Texture2D = _sprites[id]
+			var m: Dictionary = _sprite_meta[id]
+			var sz := Vector2(tex.get_width(), tex.get_height()) * SPRITE_UNIT
+			var off := Vector2(float(m["ax"]), float(m["ay"])) * SPRITE_UNIT
+			draw_set_transform(p, 0.0, Vector2.ONE)
+			draw_circle(Vector2(sz.x * 0.06, 6.0), sz.x * 0.36, Color(0.1, 0.08, 0.05, 0.12 * sa))
+			draw_texture_rect(tex, Rect2(-off, sz), false, Color(1, 1, 1, sa))
+			if zoom > 0.16:
+				draw_set_transform(p, 0.0, Vector2(inv, inv))
+				var txt2 := I18n.t(d["name_key"])
+				var f2 := ThemeBuilder.font(800)
+				var s2 := f2.get_string_size(txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 18)
+				draw_string_outline(f2, Vector2(-s2.x * 0.5, 30), txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 6, Color(Palette.LAND, 0.9))
+				draw_string(f2, Vector2(-s2.x * 0.5, 30), txt2, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("5a4a3a"))
+			draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+			if sa >= 1.0:
+				continue
 		draw_set_transform(p, 0.0, Vector2(inv, inv))
+		if sa > 0.0:
+			draw_set_transform(p, 0.0, Vector2(inv, inv) * (1.0 - sa * 0.5))
 		match d["kind"]:
 			"islet_tower":
 				draw_circle(Vector2(0, 6), 16.0, Palette.LAND)
@@ -137,6 +166,12 @@ func _draw() -> void:
 				_tower(Color("f1f1f1"), Color("b23a3a"))
 			"tower":
 				_tower(Color("e9e2d0"), Color("6b7b8c"))
+			"mosque":
+				draw_rect(Rect2(-14, -8, 28, 14), Color("e9e2d0"))
+				draw_circle(Vector2(0, -8), 9.0, Color("6b7b8c"))
+				for x in [-17, 17]:
+					draw_rect(Rect2(x - 1.5, -26, 3, 32), Color("e9e2d0"))
+					draw_colored_polygon(PackedVector2Array([Vector2(x - 2.5, -26), Vector2(x, -33), Vector2(x + 2.5, -26)]), Color("6b7b8c"))
 			"fortress":
 				draw_rect(Rect2(-16, -10, 32, 18), Color("b8a98c"))
 				for x in [-16, -6, 4]:
@@ -149,6 +184,21 @@ func _draw() -> void:
 			draw_string_outline(f, Vector2(-sz.x * 0.5, 40), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, 6, Color(Palette.LAND, 0.9))
 			draw_string(f, Vector2(-sz.x * 0.5, 40), txt, HORIZONTAL_ALIGNMENT_LEFT, -1, 18, Color("5a4a3a"))
 		draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+func _load_sprites() -> void:
+	var path := "res://assets/landmarks/landmarks.json"
+	if not FileAccess.file_exists(path):
+		return
+	var meta = JSON.parse_string(FileAccess.get_file_as_string(path))
+	if not (meta is Dictionary):
+		return
+	for d in _decor:
+		var id := str(d["name_key"]).trim_prefix("decor_")
+		var png := "res://assets/landmarks/%s.png" % id
+		if meta.has(id) and ResourceLoader.exists(png):
+			_sprites[id] = load(png)
+			_sprite_meta[id] = meta[id]
 
 
 func _draw_birds(ci: Node2D) -> void:
