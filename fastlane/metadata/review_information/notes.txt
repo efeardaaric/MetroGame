@@ -1,1 +1,24 @@
-Metro Tycoon: Türkiye is a fully offline single-player city transit simulation. No login, no network access, no in-app purchases, no ads, no data collection. To play: tap Play, pick İstanbul, choose a transit mode in the build bar, tap the map to place stops and tap Finish. Real-world events (summits, festivals) and local elections are referenced by name for historical flavour only; the game is not affiliated with any organisation.
+1. SCREEN RECORDING
+A screen recording captured on a physical iPhone running the latest iOS is attached to this App Review Information section (Attachment). It starts with launching the app from the Home Screen and shows the typical flow: main menu, starting a city, the tutorial, building a metro line, adding vehicles, the budget/goals screens and an in-game event. The app has no accounts, no user-generated content and no in-app purchases.
+
+2. PURPOSE AND AUDIENCE
+Metro Tycoon: Türkiye is a single-player city transit simulation and strategy game. The player is the transit planner of a Turkish city (Istanbul, Ankara, Izmir, Eskisehir, Antalya, Bursa, Trabzon) starting in 2010 and builds metro, tram, BRT, commuter rail, funicular, gondola and ferry lines on a stylised map. Value: a relaxing but deep planning game about public transport, budgets and city growth. Audience: players aged 4+ who enjoy simulation, strategy and city-builder games, especially people interested in Turkish cities and public transit. It is a paid-upfront game with no ads and no in-app purchases.
+
+3. HOW TO ACCESS THE MAIN FEATURES
+No login, account or sample files are needed. The app runs fully offline.
+- Launch the app and tap "Play" (Turkish: "Oyna"). Istanbul and Ankara are unlocked from the start; other cities unlock by earning stars.
+- Pick Istanbul. A short tutorial explains the controls (pinch to zoom, drag to pan).
+- Tap "Build" in the bottom bar, choose Metro, tap the map to place stops, then tap "Finish" to open the line.
+- Use the bottom bar to open Lines (add vehicles), Map layers, Goals, Finance, the in-game social feed and Research.
+- Time controls are at the top right (pause / play / fast forward).
+- The main menu also offers Scenarios, a Weekly Challenge, How to Play and Achievements.
+The language follows the device language (Turkish for Turkish devices, English otherwise).
+
+4. EXTERNAL SERVICES
+None. The app does not use any network service, server, analytics, advertising, authentication, payment processor or AI service. It is built with the open-source Godot Engine (MIT licence), which is compiled into the app. No data is collected.
+
+5. REGIONAL DIFFERENCES
+The app works identically in all regions where it is available; there are no region-specific features or content. It is offered in Turkish and English. It is not distributed in China mainland or Vietnam.
+
+6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL
+The app does not operate in a regulated industry. Third-party material is used only under open licences: Godot Engine (MIT), the fonts Nunito, Bricolage Grotesque, Doto and Noto Emoji (SIL Open Font License) and some ambient sounds from OpenGameArt (CC0, public domain). Music and other sounds are original. City maps are simplified, hand-drawn outlines. Real places, local elections and public events (summits, festivals, sports finals) are referenced by name for historical flavour only; the game is not affiliated with or endorsed by any organisation, party or venue.
