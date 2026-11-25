@@ -9,9 +9,9 @@ No login, account or sample files are needed. The app runs fully offline.
 - Launch the app and tap "Play" (Turkish: "Oyna"). Istanbul and Ankara are unlocked from the start; other cities unlock by earning stars.
 - Pick Istanbul. A short tutorial explains the controls (pinch to zoom, drag to pan).
 - Tap "Build" in the bottom bar, choose Metro, tap the map to place stops, then tap "Finish" to open the line.
-- Use the bottom bar to open Lines (add vehicles), Map layers, Goals, Finance, the in-game social feed and Research.
+- Use the bottom bar to open Lines (add vehicles), Map layers, Goals, Finance and the in-game social feed. The election countdown and upcoming real-world events are shown under the top bar; tap them for details.
 - Time controls are at the top right (pause / play / fast forward).
-- The main menu also offers Scenarios, a Weekly Challenge, How to Play and Achievements.
+- The main menu also offers Scenarios, How to Play and Achievements.
 The language follows the device language (Turkish for Turkish devices, English otherwise).
 
 4. EXTERNAL SERVICES
@@ -21,4 +21,4 @@ None. The app does not use any network service, server, analytics, advertising, 
 The app works identically in all regions where it is available; there are no region-specific features or content. It is offered in Turkish and English. It is not distributed in China mainland or Vietnam.
 
 6. REGULATED INDUSTRY / THIRD-PARTY MATERIAL
-The app does not operate in a regulated industry. Third-party material is used only under open licences: Godot Engine (MIT), the fonts Nunito, Bricolage Grotesque, Doto and Noto Emoji (SIL Open Font License) and some ambient sounds from OpenGameArt (CC0, public domain). Music and other sounds are original. City maps are simplified, hand-drawn outlines. Real places, local elections and public events (summits, festivals, sports finals) are referenced by name for historical flavour only; the game is not affiliated with or endorsed by any organisation, party or venue.
+The app does not operate in a regulated industry. Third-party material is used only under open licences: Godot Engine (MIT), the fonts Nunito, Barlow Condensed, Doto and Noto Emoji (SIL Open Font License), and music, sound effects and ambient sounds from OpenGameArt (CC0, public domain; authors credited in the in-game Credits screen). City maps are simplified, hand-drawn outlines. Real places, local elections and public events (summits, festivals, sports finals) are referenced by name for historical flavour only; the game is not affiliated with or endorsed by any organisation, party or venue.
