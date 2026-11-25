@@ -62,4 +62,19 @@ func _run() -> void:
 	ProfileCard.open(g, st.feed.posts[2]["who"])
 	await wait(1.0)
 	await shot("M7_profile2")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	st.mgmt.pending = {"id": "union_wage"}
+	g.show_modal(g.panels.decision_modal(st.mgmt.pending))
+	await wait(1.0)
+	await shot("M8_decision")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	g.open_pause_menu()
+	await wait(0.8)
+	await shot("M9_pause")
 	get_tree().quit()

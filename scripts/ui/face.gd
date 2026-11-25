@@ -10,10 +10,23 @@ const BGS := [Color("f3ebdd"), Color("dfe8f1"), Color("f0dfd2"), Color("e3ecd9")
 
 
 ## Deterministic look for a handle.
-static func look_for(handle: String) -> Dictionary:
+const FEMALE := ["Ayşe", "Zeynep", "Elif", "Selin", "Ece", "Defne", "Cansu", "İrem", "Melis", "Nazlı", "Seda", "Gizem",
+	"Buse", "Yağmur", "Ebru", "Damla", "Sevgi", "Fatma", "Hatice", "Esra", "Pınar", "Ceren", "Ayten", "Lale"]
+const MALE := ["Mehmet", "Emre", "Can", "Burak", "Mert", "Kerem", "Oğuz", "Barış", "Tolga", "Arda", "Kaan", "Onur",
+	"Serkan", "Hakan", "Efe", "Cem", "Halil", "Ali", "Murat", "Volkan", "Doruk", "Cemal", "Orhan", "Bora", "Serdar", "Fikret", "Kemal", "Rıza", "Nuri"]
+
+
+static func look_for(handle: String, name: String = "") -> Dictionary:
 	var rng := RandomNumberGenerator.new()
 	rng.seed = hash(handle)
 	var female := rng.randf() < 0.5
+	var first := name.split(" ")[0] if name != "" else ""
+	if first.begins_with("Prof"):
+		first = name.split(" ")[2] if name.split(" ").size() > 2 else ""
+	if FEMALE.has(first):
+		female = true
+	elif MALE.has(first):
+		female = false
 	var age := rng.randi() % 3  # 0 young, 1 middle, 2 old
 	var hair := 0
 	if female:
@@ -48,7 +61,14 @@ static func cast_look(id: String) -> Dictionary:
 static func look_of(who: Dictionary) -> Dictionary:
 	if who.has("cast"):
 		return cast_look(str(who["cast"]))
-	return look_for(str(who.get("handle", "x")))
+	return look_for(str(who.get("handle", "x")), str(who.get("name", "")))
+
+
+static func _circle_poly(c: Vector2, r: float, n: int) -> PackedVector2Array:
+	var pts := PackedVector2Array()
+	for i in n:
+		pts.append(c + Vector2.from_angle(TAU * i / n) * r)
+	return pts
 
 
 ## Draws a round portrait of radius r centred at c.
@@ -61,9 +81,11 @@ static func draw(ci: CanvasItem, c: Vector2, r: float, lk: Dictionary, blink: bo
 	# long hair behind the head
 	if hair == 2:
 		ci.draw_rect(Rect2(c + Vector2(-25, -10) * k, Vector2(50, 42) * k), hc)
-	# shoulders
+	# shoulders, clipped to the round frame
 	var shirt: Color = lk.get("shirt", SHIRTS[0])
-	ci.draw_circle(c + Vector2(0, 64) * k, 38 * k, shirt)
+	var frame := _circle_poly(c, r * 0.985, 40)
+	for part in Geometry2D.intersect_polygons(frame, _circle_poly(c + Vector2(0, 64) * k, 38 * k, 32)):
+		ci.draw_colored_polygon(part, shirt)
 	ci.draw_rect(Rect2(c + Vector2(-7, 24) * k, Vector2(14, 12) * k), skin.darkened(0.06))
 	if lk.get("uniform", false):
 		ci.draw_colored_polygon(PackedVector2Array([c + Vector2(-9, 30) * k, c + Vector2(0, 42) * k, c + Vector2(-16, 40) * k]), Palette.CREAM)

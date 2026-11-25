@@ -715,9 +715,29 @@ func decision_modal(ev: Dictionary) -> Modal:
 	var tag := UI.label(I18n.t("decision").to_upper(), 20, Palette.ACCENT, 900)
 	tag.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
 	m.body.add_child(tag)
-	var ic := Icon.make(d.get("icon", "info"), 72, Palette.ACCENT)
-	ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
-	m.body.add_child(ic)
+	var sp: Array = Dilemmas.SPEAKERS.get(id, [])
+	if sp.is_empty():
+		var ic := Icon.make(d.get("icon", "info"), 72, Palette.ACCENT)
+		ic.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+		m.body.add_child(ic)
+	else:
+		var who := {"name": sp[0], "handle": sp[0], "kind": "citizen"}
+		if sp[3] != "":
+			who["cast"] = sp[3]
+		var row := UI.hbox(14)
+		row.alignment = BoxContainer.ALIGNMENT_CENTER
+		var face := ProfileCard.BigFace.new()
+		face.who = who
+		face.custom_minimum_size = Vector2(96, 96)
+		row.add_child(face)
+		var nv := UI.vbox(2)
+		nv.alignment = BoxContainer.ALIGNMENT_CENTER
+		var nm := UI.label(str(sp[0]), 28, Palette.TEXT, 900)
+		nm.add_theme_font_override("font", ThemeBuilder.display(800))
+		nv.add_child(nm)
+		nv.add_child(UI.label(str(sp[1] if I18n.lang == "tr" else sp[2]), 20, Palette.MUTED, 700))
+		row.add_child(nv)
+		m.body.add_child(row)
 	var vars := st.mgmt.vars_of(st, ev)
 	var fill := func(t: String) -> String:
 		for k in vars.keys():

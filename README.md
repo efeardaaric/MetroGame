@@ -8,6 +8,17 @@ mobil için baştan tasarlanmış bir ulaşım-strateji oyunu. **Godot 4.3** ile
 
 > **App Store'a çıkış adımları:** [docs/APP_STORE.md](docs/APP_STORE.md) · Yapımcı: **Efe Arda Arıç**
 
+### Kimlik ve karakterler
+- **Görsel dil:** eski İETT durak levhaları ve TCDD istasyon tabelaları. Kobalt emaye paneller, krem iç çizgi, perçinler,
+  TCDD kırmızısı butonlar, Barlow Condensed tabela yazısı. Logo: üzerine "M" basılmış pirinç İstanbul jetonu.
+- **Ana menü:** split-flap kalkış tabelası (saat · gidiş · peron). Şehre girerken "Sıradaki durak" tabelası ve rakım.
+- **Vatman Nuri:** eğitimi anlatan emekli tramvay vatmanı.
+- **Cıvıltı kadrosu:** taksici Rıza, Hatice Teyze, öğrenci Selin, muhalefetten Kemal Bey ve Vatman Nuri kendi ağızlarıyla
+  yazar; her hesabın çizilmiş bir yüzü ve dokununca açılan profili vardır. Karar pencerelerini de belli kişiler getirir
+  (sendikadan Cemal Usta, Başkan Ayten Sezer, muhabir Deniz Ak…).
+- **3D yapılar:** `tools/bake_landmarks.tscn` 16 simge yapıyı low-poly modelleyip görsele çizer; haritada yaklaşınca görünür.
+- **Ses:** CC0 kayıtlar (kaynaklar `assets/audio/CREDITS.md`).
+
 ### Zamana karşı yarış: seçimler ve gerçek etkinlikler
 - Kampanya her şehirde **2010**'dan, ulaşıma büyük yatırımlar başlamadan önce başlar.
 - **Yerel seçimler** gerçek takvimde yapılır (Mart 2014, 2019, 2024, 2029…). Oy oranı memnuniyet,

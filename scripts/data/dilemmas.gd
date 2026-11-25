@@ -97,3 +97,25 @@ const MISSIONS := {
 	"build_mode": {"months": 12, "reward_g": 0.3, "fail_approval": -2.0},
 	"satisfaction": {"months": 12, "reward_g": 0.35, "fail_approval": -3.0, "need": 5, "level": 70.0},
 }
+
+
+## Who brings each decision to your desk: [name, role tr, role en, cast id or ""].
+const SPEAKERS := {
+	"union_wage": ["Cemal Usta", "Ulaşım-İş Sendikası başkanı", "Transit workers' union leader", ""],
+	"signal_failure": ["Nuri Aksoy", "Emekli vatman, gönüllü danışman", "Retired tram driver, volunteer adviser", "nuri"],
+	"sponsor_station": ["Ece Tanrıverdi", "Reklam ajansı müdürü", "Ad agency director", ""],
+	"fare_cut": ["Kemal Sargın", "Meclis üyesi, muhalefet", "Councillor, opposition", "kemal"],
+	"eu_grant": ["Lale Gürsoy", "Dış finansman uzmanı", "External funding officer", ""],
+	"seismic": ["Prof. Dr. Orhan Kaya", "Deprem mühendisi", "Earthquake engineer", ""],
+	"flood": ["Hakan Demirtaş", "Tünel bakım şefi", "Tunnel maintenance chief", ""],
+	"accessibility": ["Hatice Yurt", "Mahalle temsilcisi", "Neighbourhood representative", "hatice"],
+	"night_event": ["Bora Ateş", "Konser organizatörü", "Concert promoter", ""],
+	"vandalism": ["Serdar Koç", "Güvenlik amiri", "Head of security", ""],
+	"developer": ["Fikret Yalçın", "Müteahhit", "Property developer", ""],
+	"press": ["Deniz Ak", "Ulaşım muhabiri, Kent Haber", "Transport reporter, Kent Haber", ""],
+	"mayor_challenge": ["Ayten Sezer", "Belediye başkanı", "Mayor", ""],
+	"new_mode": ["Selin Ekinci", "Şehir planlama öğrencisi", "Urban planning student", "selin"],
+	"rival_app": ["Rıza Kalkan", "Taksici, 30 yıllık", "Cab driver, 30 years", "riza"],
+	"satisfaction_drive": ["Ayten Sezer", "Belediye başkanı", "Mayor", ""],
+}
+
