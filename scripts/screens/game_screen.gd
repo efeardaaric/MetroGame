@@ -48,6 +48,7 @@ var _amb_timer := 0.0
 var _rng := RandomNumberGenerator.new()
 var _last_viral_toast := -100000
 var agenda: AgendaUI
+static var skip_intro := false
 var _hq_session := true
 
 var speed_idx := 1
@@ -143,8 +144,16 @@ func _ready() -> void:
 	_update_hud()
 	_set_speed(1)
 	_focus_initial()
+	if not skip_intro:
+		CityIntro.show_for(root_ui, state.city_id, state.year)
 	if state.tutorial_step < 6 and not SaveManager.progress.get("tutorial_done", false):
-		call_deferred("_show_tutorial")
+		if skip_intro:
+			call_deferred("_show_tutorial")
+		else:
+			get_tree().create_timer(2.9).timeout.connect(func():
+				if is_inside_tree():
+					_show_tutorial()
+			)
 	if state.game_over:
 		if state.lost_election:
 			agenda.call_deferred("on_election", state.elec.last_result)
@@ -357,6 +366,7 @@ func _build_nav() -> void:
 		["target", "tab_goals", func(): open_goals()],
 		["chart", "tab_finance", func(): open_finance()],
 		["bird", "tab_social", func(): open_social()],
+		["flask", "tab_tech", func(): open_tech()],
 	]
 	for idx in items.size():
 		var it: Array = items[idx]
@@ -1439,16 +1449,23 @@ func _show_tutorial() -> void:
 	if state.tutorial_step >= 6:
 		return
 	tutorial_panel = PanelContainer.new()
-	tutorial_panel.add_theme_stylebox_override("panel", ThemeBuilder.box(Color(0.12, 0.16, 0.24, 0.97), 26, 2, Color(Palette.ACCENT, 0.7), 22, 18, 14))
+	tutorial_panel.add_theme_stylebox_override("panel", ThemeBuilder.enamel(Palette.PANEL, 20, true, 0, 24, 20))
 	var v := UI.vbox(12)
-	var h := UI.hbox(14)
-	var ic := Icon.make("info", 40, Palette.ACCENT)
-	ic.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
-	h.add_child(ic)
+	var h := UI.hbox(16)
+	var face := MentorPortrait.new()
+	face.custom_minimum_size = Vector2(92, 92)
+	face.size_flags_vertical = Control.SIZE_SHRINK_BEGIN
+	h.add_child(face)
+	var tv := UI.vbox(4)
+	tv.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	var who := UI.label(I18n.t("mentor_name").to_upper(), 21, Palette.LED, 800)
+	who.add_theme_font_override("font", ThemeBuilder.display(800))
+	tv.add_child(who)
 	var l := UI.wrap_label(I18n.t("tut_%d" % (state.tutorial_step + 1)), 25, Palette.TEXT)
 	l.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	tutorial_panel.set_meta("label", l)
-	h.add_child(l)
+	tv.add_child(l)
+	h.add_child(tv)
 	v.add_child(h)
 	var row := UI.hbox(10)
 	var skip := UI.button(I18n.t("tut_skip"), "FlatButton", "", 60)
@@ -1481,7 +1498,7 @@ func _layout_tutorial() -> void:
 	var w := minf(vs.x - 40.0, 700.0)
 	tutorial_panel.custom_minimum_size.x = w
 	var l: Label = tutorial_panel.get_meta("label")
-	l.custom_minimum_size.x = w - 44.0 - 40.0 - 14.0
+	l.custom_minimum_size.x = w - 48.0 - 92.0 - 16.0
 	tutorial_panel.size = Vector2(w, 0)
 	tutorial_panel.reset_size()
 	_shrink_tutorial_later()

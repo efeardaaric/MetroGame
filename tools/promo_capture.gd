@@ -17,6 +17,7 @@ func _ready() -> void:
 			lang = a.substr(7)
 	I18n.set_language(lang)
 	SaveManager.progress = {"stars": {"istanbul": 3, "ankara": 3, "izmir": 3}, "best_riders": {}, "tutorial_done": true, "last_city": ""}
+	GameScreen.skip_intro = true
 	main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	_run()

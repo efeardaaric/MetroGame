@@ -195,12 +195,12 @@ const STRINGS := {
 	"reset_progress": ["İlerlemeyi sıfırla", "Reset progress"],
 	"confirm_reset": ["Tüm yıldızlar ve kayıtlar silinsin mi?", "Delete all stars and saves?"],
 	# ---- tutorial
-	"tut_1": ["Hoş geldin! Sen şehrin raylı sistem planlamacısısın. Haritada iki parmakla yakınlaşabilir, tek parmakla gezebilirsin.", "Welcome! You are the city's transit planner. Pinch to zoom, drag to pan."],
-	"tut_2": ["Alttaki İnşa düğmesine bas ve bir sistem seç. Metro ile başlayalım.", "Tap Build at the bottom and choose a system. Let's start with Metro."],
-	"tut_3": ["Kalabalık bir semte dokunarak ilk durağı koy. Harita katmanından nüfus yoğunluğunu görebilirsin.", "Tap a busy district to place the first stop. The map layer shows population density."],
-	"tut_4": ["Birkaç durak daha ekle — iş merkezlerine (Çekim katmanı) bağlamak çok yolcu getirir. Sonra Bitir'e bas.", "Add a few more stops — linking to job centres (Attraction layer) brings many riders. Then tap Finish."],
-	"tut_5": ["Harika! Hatlar sekmesinden araç ekleyip sefer sıklığını artırabilirsin. Kalabalık hatlar memnuniyeti düşürür.", "Great! Add vehicles in the Lines tab to raise frequency. Crowded lines hurt satisfaction."],
-	"tut_6": ["Yıl sonunda bütçe raporu gelir. Hedefleri tamamlayarak yıldız kazan ve yeni şehirlerin kilidini aç!", "At year end you get a budget report. Complete goals to earn stars and unlock cities!"],
+	"tut_1": ["Hoş geldin evlat. Ben Nuri, kırk yıl tramvay sürdüm. Bu şehrin raylarını artık sen döşeyeceksin. İki parmakla yakınlaş, tek parmakla haritada gez.", "Welcome, kid. I'm Nuri, drove trams for forty years. Now you're the one laying this city's rails. Pinch to zoom, drag to look around."],
+	"tut_2": ["Alttaki İnşa'ya bas, bir sistem seç. Ben olsam metroyla başlardım; trafik onu tutamaz.", "Tap Build at the bottom and pick a system. I'd start with the metro; traffic can't touch it."],
+	"tut_3": ["İlk durağı kalabalık bir semte koy. Kimin nerede oturduğunu Harita'daki Nüfus katmanı söyler.", "Put the first stop in a busy district. The Population layer on the Map tells you where people live."],
+	"tut_4": ["Birkaç durak daha ekle. İnsanlar evden işe gider; hattı iş merkezlerine bağlarsan vagonlar dolar. Sonra Bitir'e bas.", "Add a few more stops. People go from home to work; link the line to job centres and the cars fill up. Then tap Finish."],
+	"tut_5": ["Hat inşaatta, birkaç ay sürer. Açılınca Hatlar'dan araç ekle: tren sık gelmezse yolcu söylenir, inan bana.", "The line is under construction; it takes a few months. Once it opens, add vehicles in Lines. If trains don't come often, people grumble, trust me."],
+	"tut_6": ["Bir de seçim var. Ankette yukarıda, haritada etkinliklerde gözün olsun. Yıl sonunda hesap gelir; bütçeyi batırma. Kolay gelsin.", "One more thing: elections. Keep an eye on the poll at the top and the events on the map. The budget report comes at year end; don't sink it. Good luck."],
 	"tut_next": ["İleri", "Next"],
 	"tut_skip": ["Eğitimi geç", "Skip tutorial"],
 	# ---- how to play
@@ -672,6 +672,12 @@ const STRINGS := {
 	"elec_lost_body": ["Oyların yalnızca %%%d'ini aldın. Seçmen ulaşım politikanı onaylamadı.", "You only won %d%% of the vote. Voters rejected your transit policy."],
 	"elec_warn": ["Seçime %d ay! Anket %%%d — kazanmak için %%%d gerek", "%d months to the election! Poll %d%% — you need %d%%"],
 	"agenda": ["Gündem", "Agenda"],
+	"mentor_name": ["Vatman Nuri", "Nuri the tram driver"],
+	"next_stop": ["Sıradaki durak", "Next stop"],
+	"altitude": ["Rakım %d m", "Altitude %d m"],
+	"board_time": ["Saat", "Time"],
+	"board_dest": ["Gidiş", "Destination"],
+	"board_plat": ["Peron", "Plat."],
 	"event_derby_short": ["Derbi", "Derby"],
 }
 

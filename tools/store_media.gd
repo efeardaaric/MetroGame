@@ -20,6 +20,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	Settings.high_quality = true
 	SaveManager.progress = {"stars": {"istanbul": 3, "ankara": 3}, "best_riders": {}, "tutorial_done": true, "last_city": ""}
+	GameScreen.skip_intro = true
 	main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	if mode == "trailer":

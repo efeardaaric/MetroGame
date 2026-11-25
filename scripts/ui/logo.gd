@@ -1,9 +1,15 @@
 class_name Logo
 extends Control
-## Animated logo: the red "M" metro sign of the app icon, with two lines running
-## into it and little trains travelling along them.
+## The game's mark: a brass transit token (jeton) like the ones Istanbul commuters
+## dropped into turnstiles for decades, stamped with an "M". It flips in once and
+## catches the light now and then.
+
+const BRASS := Color("c99a3b")
+const BRASS_LIGHT := Color("f1d27a")
+const BRASS_DARK := Color("7a5a1e")
 
 var _t := 0.0
+var coin_scale := 1.0
 
 
 func _ready() -> void:
@@ -17,47 +23,51 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	var c := size * 0.5
-	var s := minf(size.x / 560.0, size.y / 170.0)
-	var grow := clampf(_t / 1.0, 0.0, 1.0)
-	grow = 1.0 - pow(1.0 - grow, 3.0)
-	var h := 70.0 * s
-	# lines feeding the sign
-	var specs := [[Color("1d72d8"), -1.0, -18.0], [Color("2a9d8f"), 1.0, 18.0], [Color("ffb703"), -1.0, 26.0], [Color("e63946"), 1.0, -26.0]]
-	for sp in specs:
-		var dir: float = sp[1]
-		var y: float = c.y + float(sp[2]) * s
-		var x0 := c.x + dir * (h + 6.0 * s)
-		var x1 := c.x + dir * lerpf(h + 6.0 * s, 260.0 * s, grow)
-		draw_line(Vector2(x0, y), Vector2(x1, y), Color(1, 1, 1, 0.85), 15.0 * s, true)
-		draw_line(Vector2(x0, y), Vector2(x1, y), sp[0], 9.0 * s, true)
-		if grow >= 1.0:
-			var ph := fmod(_t * 0.22 + float(sp[2]) * 0.01, 1.0)
-			var x := lerpf(c.x + dir * 250.0 * s, c.x + dir * (h + 14.0 * s), ph)
-			draw_circle(Vector2(x, y), 6.0 * s, Color.WHITE)
-	# the sign, popping in
-	var pop := clampf((_t - 0.15) / 0.5, 0.0, 1.0)
-	pop = 1.0 + 0.12 * sin(pop * PI) if pop < 1.0 else 1.0
-	var hh := h * minf(1.0, clampf(_t / 0.35, 0.0, 1.0)) * pop
-	if hh <= 1.0:
-		return
-	var sb := StyleBoxFlat.new()
-	sb.bg_color = Color.WHITE
-	sb.set_corner_radius_all(int(hh * 0.36))
-	sb.shadow_color = Color(0, 0, 0, 0.35)
-	sb.shadow_size = int(8 * s)
-	sb.shadow_offset = Vector2(0, 5 * s)
-	draw_style_box(sb, Rect2(c - Vector2(hh, hh), Vector2(hh, hh) * 2.0))
-	var sb2 := StyleBoxFlat.new()
-	sb2.bg_color = Color("e63946")
-	sb2.set_corner_radius_all(int(hh * 0.3))
-	draw_style_box(sb2, Rect2(c - Vector2(hh, hh) * 0.9, Vector2(hh, hh) * 1.8))
+	var r := minf(size.y * 0.46, size.x * 0.3) * coin_scale
+	# flip-in: the coin spins about its vertical axis and settles
+	var flip := clampf(_t / 0.9, 0.0, 1.0)
+	var sx := absf(cos((1.0 - flip) * PI * 2.0)) if flip < 1.0 else 1.0
+	sx = maxf(sx, 0.04)
+	draw_set_transform(c, 0.0, Vector2(sx, 1.0))
+	draw_token(self, Vector2.ZERO, r, _t)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+
+## Draws the token on any CanvasItem (also used by the city intro board).
+static func draw_token(ci: CanvasItem, c: Vector2, r: float, t: float) -> void:
+	# drop shadow
+	ci.draw_circle(c + Vector2(0, r * 0.07), r * 1.02, Color(0, 0, 0, 0.35))
+	# rim
+	ci.draw_circle(c, r, BRASS_DARK)
+	ci.draw_circle(c, r * 0.97, BRASS)
+	ci.draw_arc(c, r * 0.93, PI * 1.05, PI * 1.85, 32, Color(BRASS_LIGHT, 0.7), r * 0.05, true)
+	# field
+	ci.draw_circle(c, r * 0.8, BRASS_DARK.lerp(BRASS, 0.55))
+	ci.draw_circle(c, r * 0.77, BRASS.darkened(0.06))
+	# milled ring of dots
+	var n := 36
+	for i in n:
+		var a := TAU * i / n
+		ci.draw_circle(c + Vector2.from_angle(a) * r * 0.875, r * 0.028, BRASS_DARK)
+	# stamped M: shadow, then the raised face
 	var pts := PackedVector2Array()
-	for p in [Vector2(-0.5, 0.5), Vector2(-0.5, -0.46), Vector2(0.0, 0.16), Vector2(0.5, -0.46), Vector2(0.5, 0.5)]:
-		pts.append(c + p * hh)
-	var w := hh * 0.28
-	draw_polyline(pts, Color.WHITE, w, true)
+	for p in [Vector2(-0.38, 0.36), Vector2(-0.38, -0.34), Vector2(0.0, 0.12), Vector2(0.38, -0.34), Vector2(0.38, 0.36)]:
+		pts.append(c + p * r)
+	var w := r * 0.2
+	var sh := PackedVector2Array()
+	for p in pts:
+		sh.append(p + Vector2(r * 0.03, r * 0.04))
+	ci.draw_polyline(sh, BRASS_DARK, w, true)
+	ci.draw_polyline(pts, BRASS_LIGHT.lerp(BRASS, 0.35), w, true)
 	for i in [0, 4]:
-		draw_circle(pts[i], w * 0.5, Color.WHITE)
-	for i in [1, 2, 3]:
-		draw_circle(pts[i], w * 0.62, Color("14233d"))
-		draw_circle(pts[i], w * 0.34, Color.WHITE)
+		ci.draw_circle(sh[i], w * 0.5, BRASS_DARK)
+		ci.draw_circle(pts[i], w * 0.5, BRASS_LIGHT.lerp(BRASS, 0.35))
+	# small star punched above the M, like the old token's cut-out
+	ci.draw_colored_polygon(Icon._star(c + Vector2(0, -r * 0.58), r * 0.09, r * 0.04), BRASS_DARK)
+	# a glint that sweeps across every few seconds
+	var g := fmod(t, 5.0) - 1.2
+	if g > 0.0 and g < 0.8:
+		var x := lerpf(-r, r, g / 0.8)
+		var top := c + Vector2(x - r * 0.25, -r * 0.7)
+		var bot := c + Vector2(x + r * 0.25, r * 0.7)
+		ci.draw_line(top, bot, Color(1, 1, 0.9, 0.22 * sin(g / 0.8 * PI)), r * 0.18, true)

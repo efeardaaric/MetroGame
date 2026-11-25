@@ -12,6 +12,7 @@ func _ready() -> void:
 	DirAccess.make_dir_recursive_absolute(out_dir)
 	I18n.set_language("tr")
 	SaveManager.progress = {"stars": {}, "best_riders": {}, "tutorial_done": true, "last_city": ""}
+	GameScreen.skip_intro = true
 	main = load("res://scenes/main.tscn").instantiate()
 	add_child(main)
 	_run()

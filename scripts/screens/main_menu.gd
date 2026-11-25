@@ -131,6 +131,7 @@ func _build_menu() -> void:
 	menu_box.add_child(tag)
 	menu_box.add_child(UI.gap(8 if land else 30))
 	var last := SaveManager.last_city()
+	var rows: Array = []
 	if last != "":
 		var cname: String
 		if last == "weekly":
@@ -139,32 +140,25 @@ func _build_menu() -> void:
 			cname = I18n.t(last)
 		else:
 			cname = I18n.t(CityData.get_city(last.trim_suffix("_sandbox"))["name_key"])
-			if last.ends_with("_sandbox"):
-				cname += " (" + I18n.t("sandbox") + ")"
-		var cont := Deco.ticket_button("%s · %s" % [I18n.t("continue"), cname], "play", Palette.STRIPES[0], 100)
-		cont.pressed.connect(func(): start_city.emit(last, false))
-		menu_box.add_child(cont)
-	var play := Deco.ticket_button(I18n.t("play"), "build" if last != "" else "play", Palette.STRIPES[1] if last != "" else Palette.STRIPES[0], 100)
-	play.pressed.connect(open_city_select)
-	menu_box.add_child(play)
-	var mrow := UI.hbox(14)
-	var scn := Deco.ticket_button(I18n.t("scenarios"), "flask", Palette.STRIPES[1], 84)
-	scn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	scn.pressed.connect(open_scenarios)
-	mrow.add_child(scn)
-	menu_box.add_child(mrow)
-	var row := UI.hbox(14)
-	var htp := Deco.ticket_button(I18n.t("how_to_play"), "info", Palette.STRIPES[2], 84)
-	htp.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	htp.pressed.connect(_show_help)
-	row.add_child(htp)
-	var st := UI.icon_button("gear", 84, "AccentButton", Palette.INK)
-	st.pressed.connect(func(): SettingsPanel.open(ui_layer, func(): _build_menu()))
-	row.add_child(st)
-	menu_box.add_child(row)
-	var ach := Deco.ticket_button(I18n.t("achievements") + "  %d/%d" % [Achievements.unlocked().size(), Achievements.LIST.size()], "trophy", Palette.STRIPES[3], 84)
-	ach.pressed.connect(func(): AchievementBanner.open_list(ui_layer))
-	menu_box.add_child(ach)
+		rows.append(["continue", "%s · %s" % [I18n.t("continue"), cname]])
+	rows.append(["play", I18n.t("new_game") if last != "" else I18n.t("play")])
+	rows.append(["scenarios", I18n.t("scenarios")])
+	rows.append(["help", I18n.t("how_to_play")])
+	rows.append(["ach", "%s %d/%d" % [I18n.t("achievements"), Achievements.unlocked().size(), Achievements.LIST.size()]])
+	rows.append(["settings", I18n.t("settings")])
+	var board := DepartureBoard.new()
+	board.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	menu_box.add_child(board)
+	board.setup(rows)
+	board.chosen.connect(func(id: String):
+		match id:
+			"continue": start_city.emit(last, false)
+			"play": open_city_select()
+			"scenarios": open_scenarios()
+			"help": _show_help()
+			"ach": AchievementBanner.open_list(ui_layer)
+			"settings": SettingsPanel.open(ui_layer, func(): _build_menu())
+	)
 	var cr := UI.button(I18n.t("credits"), "FlatButton", "", 64)
 	cr.add_theme_color_override("font_color", Palette.MUTED)
 	cr.pressed.connect(_show_credits)
@@ -334,7 +328,7 @@ func open_city_select() -> void:
 	flow.add_theme_constant_override("v_separation", 16)
 	flow.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	sc.add_child(flow)
-	for cid in ["istanbul", "ankara", "izmir"]:
+	for cid in CityData.CITY_IDS:
 		flow.add_child(_city_card(cid))
 	city_panel.modulate.a = 0.0
 	create_tween().tween_property(city_panel, "modulate:a", 1.0, 0.25)
@@ -344,9 +338,7 @@ func _city_card(cid: String) -> Control:
 	var d := CityData.get_city(cid)
 	var unlocked := SaveManager.is_unlocked(cid)
 	var card := PanelContainer.new()
-	var csb := ThemeBuilder.box(Palette.PANEL_2, 28, 3, d["accent"], 20, 20, 14)
-	csb.border_width_bottom = 10
-	card.add_theme_stylebox_override("panel", csb)
+	card.add_theme_stylebox_override("panel", ThemeBuilder.enamel(Palette.PANEL_2, 18, true, 0, 22, 20, 0.5))
 	card.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	var v := UI.vbox(12)
 	card.add_child(v)
@@ -358,12 +350,14 @@ func _city_card(cid: String) -> Control:
 	var h := UI.hbox(10)
 	# city name as a metro station sign
 	var plate := PanelContainer.new()
-	var psb := ThemeBuilder.box(Palette.INK, 12, 0, Color.TRANSPARENT, 16, 4)
-	psb.border_width_left = 12
-	psb.border_color = d["accent"]
-	plate.add_theme_stylebox_override("panel", psb)
-	var name := UI.title(I18n.t(d["name_key"]).to_upper(), 40, Palette.CREAM)
-	plate.add_child(name)
+	plate.add_theme_stylebox_override("panel", ThemeBuilder.enamel(Palette.PANEL, 10, false, 0, 22, 6, 0.9))
+	var pv := UI.vbox(0)
+	var name := UI.title(I18n.t(d["name_key"]).to_upper(), 42, Palette.CREAM)
+	pv.add_child(name)
+	var rk := UI.label(I18n.t("altitude") % CityIntro.RAKIM.get(cid, 0), 17, Color(Palette.CREAM, 0.7), 700)
+	rk.add_theme_font_override("font", ThemeBuilder.display(700))
+	pv.add_child(rk)
+	plate.add_child(pv)
 	h.add_child(plate)
 	h.add_child(UI.spacer())
 	var cs := SaveManager.city_stars(cid)

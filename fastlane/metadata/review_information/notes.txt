@@ -9,7 +9,7 @@ No login, account or sample files are needed. The app runs fully offline.
 - Launch the app and tap "Play" (Turkish: "Oyna"). Istanbul and Ankara are unlocked from the start; other cities unlock by earning stars.
 - Pick Istanbul. A short tutorial explains the controls (pinch to zoom, drag to pan).
 - Tap "Build" in the bottom bar, choose Metro, tap the map to place stops, then tap "Finish" to open the line.
-- Use the bottom bar to open Lines (add vehicles), Map layers, Goals, Finance and the in-game social feed. The election countdown and upcoming real-world events are shown under the top bar; tap them for details.
+- Use the bottom bar to open Lines (add vehicles), Map layers, Goals, Finance, the in-game social feed and Research. The election countdown and upcoming real-world events are shown under the top bar; tap them for details.
 - Time controls are at the top right (pause / play / fast forward).
 - The main menu also offers Scenarios, How to Play and Achievements.
 The language follows the device language (Turkish for Turkish devices, English otherwise).
