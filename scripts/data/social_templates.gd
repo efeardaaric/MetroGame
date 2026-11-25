@@ -19,6 +19,67 @@ const NEWS := [
 ]
 const OFFICIAL := {"name": "Metro İşletmesi", "handle": "metro_resmi", "color": "ffb703"}
 
+## Recurring characters. They post in their own voice when something they care about
+## happens; tap their avatar in Cıvıltı to open their profile.
+const CAST := {
+	"nuri": {"name": "Nuri Aksoy", "handle": "vatman_nuri", "followers": 18400,
+		"bio": ["Emekli vatman. 1978'den 2018'e Kabataş–Zeytinburnu. Ray sesini hâlâ duyarım.", "Retired tram driver, 1978 to 2018. I can still hear the rails."],
+		"look": {"skin": 1, "hair": 0, "hair_col": 5, "beard": 1, "hat": "driver", "uniform": true, "shirt": "1d3566", "bg": "f3ebdd", "age": 2, "smile": true},
+		"lines": {
+			"line_open": [["yeni hatta bindim. 1978'de ilk tramvayımı sürdüğüm gün de böyle heyecanlanmıştım", "rode the new line. felt the same as the day i drove my first tram in 1978", 0.8]],
+			"inc_breakdown": [["arıza olur evlat. ama bakım yapılmazsa daha çok olur, ben söylemiş olayım", "breakdowns happen, kid. skip maintenance and they happen more, mark my words", -0.4]],
+			"vehicles_added": [["sefer sıklığı her şeydir. yolcu beklemeyi sevmez, kırk yıldır öyle", "frequency is everything. riders hate waiting, always have", 0.6]],
+			"modernized": [["yeni trenler güzel olmuş. eskilerin kokusunu özleyeceğim ama", "the new trains are lovely. i'll miss the smell of the old ones though", 0.6]],
+			"crowded": [["bu kalabalık benim zamanımda da vardı. çaresi belli: daha çok sefer", "we had crowds like this in my day too. the cure is simple: more trains", -0.4]],
+			"ev_snow": [["kar yağınca gece üçte kalkıp makas temizlerdik. metro bu dertten kurtarıyor", "when it snowed we got up at 3am to clear the switches. the metro spares you that", 0.3]],
+		}},
+	"riza": {"name": "Rıza Kalkan", "handle": "rizaabi_taksi", "followers": 2300,
+		"bio": ["30 yıllık taksici. Metroya karşıyım, ama bazen biniyorum. Kimseye söylemeyin.", "Cab driver for 30 years. Against the metro, but i ride it sometimes. Don't tell anyone."],
+		"look": {"skin": 2, "hair": 1, "hair_col": 4, "beard": 1, "hat": "kasket", "shirt": "3d4b5c", "bg": "dfe8f1", "age": 1, "smile": false},
+		"lines": {
+			"line_open": [["metro açılmış, müşteri kalmadı. ben de bindim bari, fena değilmiş. kimseye söylemeyin", "the metro opened and my fares vanished. rode it myself. not bad. don't tell anyone", 0.2]],
+			"fare_up": [["bilete zam gelmiş, millet taksiye döner dedim. dönmedi", "fares went up, i said people would come back to cabs. they didn't", -0.3]],
+			"ev_bridge_traffic": [["köprüde iki saat. taksimetre çalışıyor, müşteri ağlıyor, ben ağlıyorum", "two hours on the bridge. meter running, passenger crying, me crying", -0.5]],
+			"ev_derby": [["derbi günü stada taksi istemeyin. ben bile metroyla gidiyorum", "don't call a cab to the stadium on derby day. even i take the metro", 0.2]],
+			"no_network": [["bu şehre metro yapılmaz, yapılsa da kimse binmez. 30 yıllık şoförüm, bilirim", "this city will never get a metro, and nobody would ride it anyway. 30 years behind the wheel, i know", -0.3]],
+		}},
+	"hatice": {"name": "Hatice Yurt", "handle": "haticeteyze56", "followers": 960,
+		"bio": ["Emekli öğretmen, dört torun. Pazar günleri börek, salı günleri pazar.", "Retired teacher, four grandkids. Börek on Sundays, market on Tuesdays."],
+		"look": {"skin": 0, "hair": 5, "scarf_col": "8e6bb0", "glasses": true, "shirt": "2f6b4f", "bg": "f0dfd2", "age": 2, "smile": true},
+		"lines": {
+			"crowded": [["pazara giderken kimse yer vermedi. gençler telefona bakıyor, ben poşetlere", "nobody gave me a seat on the way to the market. kids staring at phones, me at my shopping bags", -0.6]],
+			"dlg_accessibility_1": [["istasyonlara asansör geliyormuş. dizlerim size dua ediyor", "lifts are coming to the stations. my knees are praying for you", 0.9]],
+			"fare_up": [["emekli maaşıyla bilete zam. torunlara harçlık kalmadı", "a fare hike on a pension. nothing left for the grandkids' pocket money", -0.8]],
+			"chatter_pos": [["metroyla torunlara gittim, kırk dakikada vardım. eskiden bütün günüm giderdi", "went to see the grandkids by metro, forty minutes. used to take my whole day", 0.8]],
+			"line_extend": [["metro bizim mahalleye de gelmiş. komşular sevinçten börek yaptı", "the metro reached our street. the neighbours made börek to celebrate", 0.9]],
+		}},
+	"selin": {"name": "Selin Ekinci", "handle": "selin.okulda", "followers": 5100,
+		"bio": ["Şehir planlama 3. sınıf. Kahve, harita, gecikmeli tren. Fikirlerim bana ait.", "Urban planning, third year. Coffee, maps, late trains. Opinions my own."],
+		"look": {"skin": 4, "hair": 4, "hair_col": 1, "glasses": true, "shirt": "c47a1f", "bg": "ece2f0", "age": 0, "smile": true},
+		"lines": {
+			"poi_university": [["kampüse metro geldi. derse geç kalmak için yeni bahane bulmam lazım", "the metro reached campus. now i need a new excuse for being late", 0.8]],
+			"ev_university": [["okullar açıldı, kampüs hattı yürüyen yurt gibi", "term started, the campus line is a dormitory on wheels", 0.1]],
+			"fare_up": [["öğrenci bileti zamlanmış. fotokopi pahalı, metro pahalı. yürüyorum", "student fares went up. photocopies are expensive, the metro is expensive. i'm walking", -0.7]],
+			"fare_down": [["bilet ucuzladı. bu ay bir simit fazla", "fares went down. one more simit this month", 0.8]],
+			"long_wait": [["{line} {n} dakikada bir. dönem ödevimi bu bekleme süreleri üzerine yazıyorum", "{line} every {n} minutes. i'm writing my term paper about these waits", -0.5]],
+			"hub_open": [["{station} aktarma merkezi olmuş. hocam derste örnek gösterdi, ben de gidip gördüm", "{station} became a real interchange. our lecturer used it as an example, i went to see it", 0.8]],
+		}},
+	"kemal": {"name": "Kemal Sargın", "handle": "kemalsargin_meclis", "followers": 31200,
+		"bio": ["Belediye meclis üyesi (muhalefet). Ulaşım komisyonu. Rakamlar yalan söylemez.", "City councillor (opposition), transport committee. Numbers don't lie."],
+		"look": {"skin": 0, "hair": 1, "hair_col": 5, "glasses": true, "shirt": "14233d", "bg": "dfe8f1", "age": 1, "smile": false},
+		"lines": {
+			"debt": [["Ulaşım işletmesi borç batağında. Meclise soru önergesi verdik.", "The transit operator is drowning in debt. We have filed a question in council.", -0.8]],
+			"year_bad": [["Rakamlar ortada: işletme zarar ediyor. Hesabını soracağız.", "The numbers are clear: the operator is losing money. We will hold them to account.", -0.7]],
+			"con_overrun": [["{line} yine gecikti, yine pahalandı. Planlama nerede?", "{line} is late again and over budget again. Where is the planning?", -0.7]],
+			"re_fail": [["{event} tam bir rezalet. Ulaşım planı yoktu, vatandaş yolda kaldı.", "{event} was a disgrace. There was no transit plan and people were stranded.", -0.9]],
+			"elec_poll": [["Anketler değişimin geldiğini gösteriyor. Sandıkta görüşürüz.", "The polls show change is coming. See you at the ballot box.", -0.4]],
+			"line_open": [["{line} açıldı, güzel. Ama seçim öncesi açılış yapmak kolay, bakımı zor.", "{line} is open, fine. But opening lines before an election is easy; maintaining them isn't.", 0.0]],
+		}},
+}
+
+const JOBS := [["muhasebeci", "accountant"], ["hemşire", "nurse"], ["öğrenci", "student"], ["esnaf", "shopkeeper"], ["yazılımcı", "developer"], ["emekli", "retired"], ["garson", "waiter"], ["öğretmen", "teacher"], ["mimar", "architect"], ["kurye", "courier"], ["berber", "barber"], ["avukat", "lawyer"]]
+const QUIRKS := [["kedisi var", "has a cat"], ["sabah koşucusu", "morning runner"], ["çay bağımlısı", "tea addict"], ["vapur fotoğrafçısı", "ferry photographer"], ["derbi kaçırmaz", "never misses a derby"], ["bisiklet sever", "loves cycling"], ["kitap kurdu", "bookworm"], ["dolmuş nostaljisi", "misses the dolmuş"]]
+
 const T := {
 	# Voice guide: citizens write like real Turkish Twitter (lowercase, short, ironic, local);
 	# news accounts use plain headline style; the operator writes like a corporate account.

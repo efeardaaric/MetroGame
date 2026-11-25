@@ -3,6 +3,7 @@ extends RefCounted
 ## "Cıvıltı" — an in-game social network where citizens react to the player's decisions.
 
 signal post_added(post: Dictionary)
+signal profile_requested(who: Dictionary)
 
 const MAX_POSTS := 80
 const IMPORTANT := ["quake_major", "ev_derby", "ev_bridge_traffic", "ev_snow", "con_overrun", "archaeology", "official_open"]
@@ -101,6 +102,17 @@ func post(category: String, vars: Dictionary, state: GameState, author: String =
 		return {}
 	var arr: Array = SocialTemplates.T[category]
 	var tpl: Array = arr[_rng.randi() % arr.size()]
+	# now and then one of the recurring characters has something to say about it
+	var cast_id := ""
+	if author == "citizen" and _rng.randf() < 0.35:
+		var opts: Array = []
+		for cid in SocialTemplates.CAST.keys():
+			if SocialTemplates.CAST[cid]["lines"].has(category):
+				opts.append(cid)
+		if not opts.is_empty():
+			cast_id = opts[_rng.randi() % opts.size()]
+			var cl: Array = SocialTemplates.CAST[cast_id]["lines"][category]
+			tpl = cl[_rng.randi() % cl.size()]
 	var v := vars.duplicate()
 	if state:
 		var cn: Array = I18n.STRINGS[state.city.data["name_key"]]
@@ -118,7 +130,11 @@ func post(category: String, vars: Dictionary, state: GameState, author: String =
 			who = SocialTemplates.OFFICIAL.duplicate()
 			who["kind"] = "official"
 		_:
-			who = _person()
+			if cast_id != "":
+				var c: Dictionary = SocialTemplates.CAST[cast_id]
+				who = {"name": c["name"], "handle": c["handle"], "color": "1d3566", "kind": "citizen", "cast": cast_id}
+			else:
+				who = _person()
 	var sentiment: float = tpl[2]
 	var base := _rng.randf_range(4.0, 60.0) * boost
 	if absf(sentiment) > 0.75:

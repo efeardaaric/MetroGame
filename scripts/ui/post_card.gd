@@ -21,8 +21,22 @@ class Avatar:
 	var color := Color.WHITE
 	var initials := ""
 	var kind := "citizen"
+	var who := {}
+	var feed: SocialFeed
+	var _look := {}
+	func _gui_input(e: InputEvent) -> void:
+		if feed and ((e is InputEventMouseButton and not e.pressed and e.button_index == MOUSE_BUTTON_LEFT) or (e is InputEventScreenTouch and not e.pressed)):
+			feed.profile_requested.emit(who)
 	func _draw() -> void:
 		var r := size.x * 0.5
+		if kind == "citizen":
+			if _look.is_empty():
+				_look = Face.look_of(who)
+			Face.draw(self, Vector2(r, r), r, _look)
+			return
+		if kind == "official":
+			Logo.draw_token(self, Vector2(r, r), r * 0.95, 0.0)
+			return
 		draw_circle(Vector2(r, r), r, color)
 		var f := ThemeBuilder.font(900)
 		var fs := int(r * 0.85)
@@ -53,7 +67,9 @@ func _build() -> void:
 	var parts: PackedStringArray = str(who["name"]).split(" ")
 	av.initials = (parts[0].substr(0, 1) + (parts[1].substr(0, 1) if parts.size() > 1 else "")).to_upper()
 	av.kind = who.get("kind", "citizen")
-	av.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	av.who = who
+	av.feed = feed
+	av.mouse_filter = Control.MOUSE_FILTER_STOP
 	h.add_child(av)
 	var v := UI.vbox(6)
 	v.size_flags_horizontal = Control.SIZE_EXPAND_FILL

@@ -121,6 +121,7 @@ func _ready() -> void:
 	ach_banner = AchievementBanner.new()
 	root_ui.add_child(ach_banner)
 	state.feed.post_added.connect(_on_post)
+	state.feed.profile_requested.connect(func(who: Dictionary): ProfileCard.open(self, who))
 	state.calendar.announced.connect(agenda.on_announced)
 	state.calendar.started.connect(agenda.on_started)
 	state.election_promise.connect(func(): _queue_modal(agenda.promise_modal))

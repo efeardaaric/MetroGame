@@ -39,4 +39,27 @@ func _run() -> void:
 	await shot("M3_intro")
 	await wait(2.6)
 	await shot("M4_tutorial")
+	var g: GameScreen = main.current
+	if g.tutorial_panel:
+		g.tutorial_panel.queue_free()
+		g.tutorial_panel = null
+	var st := g.state
+	for cat in ["crowded", "fare_up", "line_open", "debt", "poi_university", "chatter_neg"]:
+		st.feed.post(cat, {"line": "M1", "a": "Kızılay", "b": "Batıkent", "st": "Ulus", "mode": ["metro", "metro"], "poi": ["ODTÜ", "METU"], "poitag": ["ODTÜ", "METU"]}, st, "citizen")
+	st.feed.post("line_open", {"line": "M1", "a": "Kızılay", "b": "Batıkent", "st": "Ulus"}, st, "citizen")
+	g.open_social()
+	await wait(1.0)
+	await shot("M5_social")
+	g.sheet.close()
+	await wait(0.4)
+	ProfileCard.open(g, {"name": "Nuri Aksoy", "handle": "vatman_nuri", "kind": "citizen", "cast": "nuri"})
+	await wait(1.0)
+	await shot("M6_profile")
+	for c in g.ui_layer.get_children():
+		if c is Modal:
+			c.queue_free()
+	g.modal_count = 0
+	ProfileCard.open(g, st.feed.posts[2]["who"])
+	await wait(1.0)
+	await shot("M7_profile2")
 	get_tree().quit()
