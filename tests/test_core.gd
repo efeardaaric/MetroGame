@@ -88,17 +88,17 @@ func _run() -> void:
 	check(SocialFeed.tr_suffix("Bostancı", "a") == "ya", "Bostancı'ya")
 	check(SocialFeed.tr_suffix("M4", "da") == "te", "M4'te")
 	check(SocialFeed.tr_suffix("Kadıköy", "dan") == "den", "Kadıköy'den")
-	# research
+	# technology arrives with the calendar
 	var r_st := GameState.new("istanbul")
-	check(r_st.tech_state("driverless") == "locked_year", "driverless locked until 2017")
-	check(r_st.start_research("contactless"), "start contactless research")
-	check(r_st.tech_state("ac_fleet") == "busy", "one project at a time")
-	var inc0 := r_st.monthly_income()
-	for i in 3:
+	check(r_st.researched.has("contactless") and r_st.researched.has("ac_fleet"), "2010 tech in use at start")
+	check(not r_st.researched.has("realtime") and not r_st.researched.has("driverless"), "later tech not yet")
+	for i in 12:
 		r_st._end_month()
-	check(r_st.researched.has("contactless"), "research completes after months")
+	check(r_st.year == 2011 and r_st.researched.has("realtime"), "realtime info adopted in 2011")
+	r_st.researched.erase("prefab")
 	r_st.riders = 100000.0
 	check(r_st.monthly_income() > 100000.0 * 30.0 * GameState.FARE / 1e6 * 1.05, "contactless raises fare income")
+	r_st.researched.erase("prefab")
 	var c1 := r_st.net.evaluate_draft("metro", false, [{"pos": Vector2(20, 30), "sid": -1}, {"pos": Vector2(22, 30), "sid": -1}])
 	r_st.researched.append("prefab")
 	var c2 := r_st.net.evaluate_draft("metro", false, [{"pos": Vector2(20, 30), "sid": -1}, {"pos": Vector2(22, 30), "sid": -1}])

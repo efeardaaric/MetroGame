@@ -357,7 +357,6 @@ func _build_nav() -> void:
 		["target", "tab_goals", func(): open_goals()],
 		["chart", "tab_finance", func(): open_finance()],
 		["bird", "tab_social", func(): open_social()],
-		["flask", "tab_tech", func(): open_tech()],
 	]
 	for idx in items.size():
 		var it: Array = items[idx]
@@ -1231,10 +1230,8 @@ func _on_construction_done(lid: int) -> void:
 	var l: Dictionary = state.net.lines[lid]
 	state.feed.on_line_opened(state, lid, false)
 	toast.show_msg(I18n.t("line_built") % l["name"], "good", 4.0)
-	Audio.play("chime")
-	Audio.play("goal", 1.2, -4.0)
+	Audio.play("build")
 	Settings.vibrate(60)
-	confetti.burst()
 	world.network.rebuild()
 	check_achievements()
 

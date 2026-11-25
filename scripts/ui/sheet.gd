@@ -41,15 +41,10 @@ func _build(title: String) -> void:
 	)
 	add_child(dim)
 	panel = PanelContainer.new()
-	var sb := ThemeBuilder.box(Palette.PANEL, 34, 1, Palette.STROKE, 28, 18, 16)
-	sb.corner_radius_bottom_left = 0
-	sb.corner_radius_bottom_right = 0
+	var sb := ThemeBuilder.enamel(Palette.PANEL, 24, true, 0, 28, 20)
 	panel.add_theme_stylebox_override("panel", sb)
 	panel.mouse_filter = Control.MOUSE_FILTER_STOP
 	add_child(panel)
-	var pat := Deco.CiniPattern.new()
-	pat.band = 170.0
-	panel.add_child(pat)
 	var v := UI.vbox(14)
 	panel.add_child(v)
 	# route stripe instead of a plain grabber
@@ -94,15 +89,14 @@ func is_side() -> bool:
 func _layout() -> void:
 	var vs := get_viewport_rect().size
 	var safe := SafeArea.margins(self)
-	var sb: StyleBoxFlat = panel.get_theme_stylebox("panel")
+	var sb: StyleBox = panel.get_theme_stylebox("panel")
 	if is_side():
 		# landscape: docked side panel on the right
 		var w := minf(620.0, vs.x * 0.46)
 		var top := maxf(side_top, 12.0 + safe.y)
 		panel.size = Vector2(w, vs.y - top - 12.0 - safe.w)
 		panel.position = Vector2(vs.x - w - 12.0 - safe.z, top)
-		sb.set_corner_radius_all(30)
-		sb.content_margin_bottom = 18
+		sb.content_margin_bottom = 20
 		return
 	var w2 := minf(vs.x, MAX_W)
 	var max_h := vs.y * max_height_ratio
@@ -111,10 +105,7 @@ func _layout() -> void:
 	var h := clampf(content_h, 240.0, max_h)
 	panel.size = Vector2(w2, h)
 	panel.position = Vector2((vs.x - w2) * 0.5, vs.y - h)
-	sb.set_corner_radius_all(34)
-	sb.corner_radius_bottom_left = 0
-	sb.corner_radius_bottom_right = 0
-	sb.content_margin_bottom = 18 + safe.w
+	sb.content_margin_bottom = 20 + safe.w
 
 
 func refresh_layout() -> void:

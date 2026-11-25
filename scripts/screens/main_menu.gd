@@ -110,9 +110,7 @@ func _build_menu() -> void:
 	menu_box.add_child(logo)
 	# title as a station sign
 	var sign := PanelContainer.new()
-	var ssb := ThemeBuilder.box(Palette.INK, 22, 4, Palette.CREAM, 30, 10, 18)
-	ssb.border_width_bottom = 10
-	sign.add_theme_stylebox_override("panel", ssb)
+	sign.add_theme_stylebox_override("panel", ThemeBuilder.enamel(Palette.PANEL, 22, true, 0, 40, 18, 0.9))
 	var sv := UI.vbox(0)
 	var title := UI.title(I18n.t("app_title_main").to_upper(), 74 if land else 86, Palette.CREAM)
 	title.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
@@ -154,10 +152,6 @@ func _build_menu() -> void:
 	scn.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	scn.pressed.connect(open_scenarios)
 	mrow.add_child(scn)
-	var wk := Deco.ticket_button(I18n.t("weekly_short"), "calendar", Palette.STRIPES[3], 84)
-	wk.size_flags_horizontal = Control.SIZE_EXPAND_FILL
-	wk.pressed.connect(open_weekly)
-	mrow.add_child(wk)
 	menu_box.add_child(mrow)
 	var row := UI.hbox(14)
 	var htp := Deco.ticket_button(I18n.t("how_to_play"), "info", Palette.STRIPES[2], 84)

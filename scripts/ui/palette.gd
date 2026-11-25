@@ -1,12 +1,14 @@
 class_name Palette
 extends RefCounted
-## "Bilet & Tabela" palette: deep tunnel navy, ticket cream, ferry yellow, tram red,
-## İznik turquoise and Bosphorus blue.
+## "Emaye tabela" palette, after the old enamel signs of İETT stops and TCDD stations:
+## cobalt enamel, sign cream, TCDD red, ferry yellow.
 
-const BG := Color("0d1626")
-const PANEL := Color(0.078, 0.122, 0.2, 0.97)
-const PANEL_2 := Color("1b2a45")
-const PANEL_3 := Color("263a5e")
+const BG := Color("0e1b33")
+const PANEL := Color("17305e")
+const PANEL_2 := Color("1e3b70")
+const PANEL_3 := Color("2a4c8c")
+const ENAMEL_RED := Color("c4122f")
+const ENAMEL_GREEN := Color("1f5a43")
 const STROKE := Color(0.96, 0.92, 0.85, 0.09)
 const TEXT := Color("f5eedf")
 const MUTED := Color("a9b2c4")

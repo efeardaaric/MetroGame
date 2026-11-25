@@ -1,5 +1,5 @@
 extends Node
-## Music + pooled sound effects. Streams are generated offline (tools/gen_audio.py).
+## Music + pooled sound effects. Recorded CC0 music and SFX, see assets/audio/CREDITS.md.
 
 const SFX := {
 	"tap": "res://assets/audio/tap.wav",
@@ -13,7 +13,7 @@ const SFX := {
 	"swoosh": "res://assets/audio/swoosh.wav",
 	"undo": "res://assets/audio/undo.wav",
 }
-const MUSIC := "res://assets/audio/music.wav"
+const MUSIC := "res://assets/audio/music_day.ogg"
 const AMB_DIR := "res://assets/audio/amb/"
 const AMB_LOOPS := ["sea_loop", "city_loop", "wind_loop"]
 const AMB_SHOTS := ["gull_1", "gull_2", "gull_3", "gull_4", "gull_5", "gull_6", "ferry_horn", "tram_bell"]
@@ -32,6 +32,16 @@ var _amb_shot: AudioStreamPlayer
 var _amb_streams := {}
 
 
+func _looped(s: AudioStream) -> AudioStream:
+	if s is AudioStreamOggVorbis:
+		s.loop = true
+	elif s is AudioStreamWAV:
+		s.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		s.loop_begin = 0
+		s.loop_end = int(s.get_length() * s.mix_rate)
+	return s
+
+
 func _ready() -> void:
 	process_mode = Node.PROCESS_MODE_ALWAYS
 	for k in SFX.keys():
@@ -44,23 +54,13 @@ func _ready() -> void:
 	_music = AudioStreamPlayer.new()
 	add_child(_music)
 	if ResourceLoader.exists(MUSIC):
-		var s = load(MUSIC)
-		if s is AudioStreamWAV:
-			s.loop_mode = AudioStreamWAV.LOOP_FORWARD
-			s.loop_begin = 0
-			s.loop_end = int(s.get_length() * s.mix_rate)
-		_music.stream = s
+		_music.stream = _looped(load(MUSIC))
 	_moods["day"] = _music
 	for mood in ["night", "tense"]:
-		var path := "res://assets/audio/music_%s.wav" % mood
+		var path := "res://assets/audio/music_%s.ogg" % mood
 		if ResourceLoader.exists(path):
-			var ms = load(path)
-			if ms is AudioStreamWAV:
-				ms.loop_mode = AudioStreamWAV.LOOP_FORWARD
-				ms.loop_begin = 0
-				ms.loop_end = int(ms.get_length() * ms.mix_rate)
 			var pl := AudioStreamPlayer.new()
-			pl.stream = ms
+			pl.stream = _looped(load(path))
 			pl.volume_db = -80.0
 			add_child(pl)
 			_moods[mood] = pl

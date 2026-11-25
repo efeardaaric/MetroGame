@@ -23,20 +23,96 @@ static var _display_cache := {}
 static var _led_cache := {}
 
 
-## Characterful display face for titles and big numbers (Bricolage Grotesque, OFL).
+## Signage face for titles, buttons and big numbers: Barlow Condensed (OFL), close to the
+## DIN-style lettering of old TCDD station boards and İETT stop plates.
 static func display(weight: int = 800) -> Font:
-	weight = clampi(weight, 200, 800)
-	if _display_cache.has(weight):
-		return _display_cache[weight]
-	var base: FontFile = load("res://assets/fonts/BricolageGrotesque.ttf")
+	var heavy := weight >= 750
+	if _display_cache.has(heavy):
+		return _display_cache[heavy]
+	var base: FontFile = load("res://assets/fonts/BarlowCondensed-ExtraBold.ttf" if heavy else "res://assets/fonts/BarlowCondensed-SemiBold.ttf")
 	if base.fallbacks.is_empty():
 		base.fallbacks = [load("res://assets/fonts/Nunito.ttf")]
 	var fv := FontVariation.new()
 	fv.base_font = base
-	var ts := TextServerManager.get_primary_interface()
-	fv.variation_opentype = {ts.name_to_tag("wght"): weight, ts.name_to_tag("opsz"): 48, ts.name_to_tag("wdth"): 92}
-	_display_cache[weight] = fv
+	fv.spacing_glyph = 1
+	_display_cache[heavy] = fv
 	return fv
+
+
+static var _enamel_cache := {}
+
+
+## Enamel sign plate: rolled darker rim, a cream inset line, optional corner rivets and an
+## optional darker lip underneath (for pressable keys). Built once per style as a 9-slice.
+static func enamel(color: Color, radius: int = 18, rivets: bool = false, lip: int = 0,
+		pad_h: int = 18, pad_v: int = 12, inset: float = 0.75) -> StyleBoxTexture:
+	var key := "%s_%d_%s_%d_%.2f" % [color.to_html(), radius, rivets, lip, inset]
+	var tex: Texture2D
+	if _enamel_cache.has(key):
+		tex = _enamel_cache[key]
+	else:
+		tex = _enamel_texture(color, radius, rivets, lip, inset)
+		_enamel_cache[key] = tex
+	var m := radius + 12
+	var s := StyleBoxTexture.new()
+	s.texture = tex
+	s.texture_margin_left = m
+	s.texture_margin_right = m
+	s.texture_margin_top = m
+	s.texture_margin_bottom = m + lip
+	s.content_margin_left = pad_h
+	s.content_margin_right = pad_h
+	s.content_margin_top = pad_v
+	s.content_margin_bottom = pad_v + lip
+	return s
+
+
+static func _rr_dist(p: Vector2, size: Vector2, r: float) -> float:
+	# signed distance to a rounded rectangle at origin (negative inside)
+	var q := (p - size * 0.5).abs() - size * 0.5 + Vector2(r, r)
+	return Vector2(maxf(q.x, 0.0), maxf(q.y, 0.0)).length() + minf(maxf(q.x, q.y), 0.0) - r
+
+
+static func _enamel_texture(color: Color, radius: int, rivets: bool, lip: int, inset: float) -> ImageTexture:
+	var m := radius + 12
+	var w := m * 2 + 8
+	var h := m * 2 + 8 + lip
+	var img := Image.create(w, h, false, Image.FORMAT_RGBA8)
+	var plate := Vector2(w, h - lip)
+	var rim := color.darkened(0.38)
+	var lipc := color.darkened(0.5)
+	var cream := Palette.CREAM
+	var rv := [Vector2(m * 0.55, m * 0.55), Vector2(w - m * 0.55, m * 0.55), Vector2(m * 0.55, plate.y - m * 0.55), Vector2(w - m * 0.55, plate.y - m * 0.55)]
+	for y in h:
+		for x in w:
+			var p := Vector2(x + 0.5, y + 0.5)
+			var out := Color(0, 0, 0, 0)
+			if lip > 0:
+				var dl := _rr_dist(p - Vector2(0, lip), plate, radius)
+				var al := clampf(0.5 - dl, 0.0, 1.0)
+				out = Color(lipc.r, lipc.g, lipc.b, al)
+			var d := _rr_dist(p, plate, radius)
+			var a := clampf(0.5 - d, 0.0, 1.0)
+			if a > 0.0:
+				# gentle top gloss, slightly darker toward the bottom
+				var t := p.y / plate.y
+				var c := color.lightened(0.07 * (1.0 - t)).darkened(0.05 * t)
+				# rolled rim
+				c = c.lerp(rim, clampf(1.0 - absf(d + 1.5) / 1.8, 0.0, 1.0))
+				# cream inset line
+				if inset > 0.0:
+					var li := clampf(1.2 - absf(d + 7.5), 0.0, 1.0) * inset
+					c = c.lerp(cream, li)
+				if rivets:
+					for r in rv:
+						var dr: float = p.distance_to(r)
+						if dr < 4.5:
+							var sh := clampf(4.5 - dr, 0.0, 1.0)
+							var lit := 1.0 - clampf((p.y - r.y + 1.5) / 4.0, 0.0, 1.0) * 0.35
+							c = c.lerp(cream * lit, sh)
+				out = out.blend(Color(c.r, c.g, c.b, a))
+			img.set_pixel(x, y, out)
+	return ImageTexture.create_from_image(img)
 
 
 ## Dot-matrix "departure board" face for the HUD (Doto, OFL).
@@ -97,12 +173,11 @@ static func build() -> Theme:
 
 	# Buttons — tactile keys
 	var face := Palette.PANEL_3
-	var lip := Palette.PANEL_3.darkened(0.45)
-	t.set_stylebox("normal", "Button", key3d(face, lip))
-	t.set_stylebox("hover", "Button", key3d(face.lightened(0.06), lip))
-	t.set_stylebox("pressed", "Button", key3d(face.darkened(0.08), lip, true))
-	t.set_stylebox("hover_pressed", "Button", key3d(face.darkened(0.08), lip, true))
-	t.set_stylebox("disabled", "Button", key3d(Palette.PANEL_2, Palette.PANEL_2.darkened(0.3)))
+	t.set_stylebox("normal", "Button", enamel(face, 14, false, 6, 22, 12, 0.5))
+	t.set_stylebox("hover", "Button", enamel(face.lightened(0.05), 14, false, 6, 22, 12, 0.5))
+	t.set_stylebox("pressed", "Button", enamel(face.darkened(0.1), 14, false, 2, 22, 14, 0.5))
+	t.set_stylebox("hover_pressed", "Button", enamel(face.darkened(0.1), 14, false, 2, 22, 14, 0.5))
+	t.set_stylebox("disabled", "Button", enamel(Palette.PANEL_2, 14, false, 6, 22, 12, 0.2))
 	t.set_stylebox("focus", "Button", StyleBoxEmpty.new())
 	t.set_color("font_color", "Button", Palette.TEXT)
 	t.set_color("font_hover_color", "Button", Palette.TEXT)
@@ -110,31 +185,32 @@ static func build() -> Theme:
 	t.set_color("font_disabled_color", "Button", Palette.FAINT)
 	t.set_color("font_hover_pressed_color", "Button", Palette.ACCENT)
 	t.set_font("font", "Button", display(700))
-	t.set_font_size("font_size", "Button", 26)
+	t.set_font_size("font_size", "Button", 29)
 	t.set_constant("h_separation", "Button", 10)
 
-	# Accent key: ferry yellow
+	# Accent key: TCDD red enamel with cream lettering
 	t.add_type("AccentButton")
 	t.set_type_variation("AccentButton", "Button")
-	t.set_stylebox("normal", "AccentButton", key3d(Palette.ACCENT, Palette.ACCENT_DARK))
-	t.set_stylebox("hover", "AccentButton", key3d(Palette.ACCENT.lightened(0.08), Palette.ACCENT_DARK))
-	t.set_stylebox("pressed", "AccentButton", key3d(Palette.ACCENT.darkened(0.05), Palette.ACCENT_DARK, true))
-	t.set_stylebox("hover_pressed", "AccentButton", key3d(Palette.ACCENT.darkened(0.05), Palette.ACCENT_DARK, true))
-	t.set_stylebox("disabled", "AccentButton", key3d(Palette.ACCENT.darkened(0.55), Palette.ACCENT.darkened(0.7)))
+	var red := Palette.ENAMEL_RED
+	t.set_stylebox("normal", "AccentButton", enamel(red, 14, false, 6, 22, 12, 0.8))
+	t.set_stylebox("hover", "AccentButton", enamel(red.lightened(0.06), 14, false, 6, 22, 12, 0.8))
+	t.set_stylebox("pressed", "AccentButton", enamel(red.darkened(0.1), 14, false, 2, 22, 14, 0.8))
+	t.set_stylebox("hover_pressed", "AccentButton", enamel(red.darkened(0.1), 14, false, 2, 22, 14, 0.8))
+	t.set_stylebox("disabled", "AccentButton", enamel(red.darkened(0.55), 14, false, 6, 22, 12, 0.2))
 	for c in ["font_color", "font_hover_color", "font_pressed_color", "font_hover_pressed_color"]:
-		t.set_color(c, "AccentButton", Palette.INK)
-	t.set_color("font_disabled_color", "AccentButton", Color(0, 0, 0, 0.45))
+		t.set_color(c, "AccentButton", Palette.CREAM)
+	t.set_color("font_disabled_color", "AccentButton", Color(1, 1, 1, 0.4))
 	t.set_font("font", "AccentButton", display(800))
 
 	# Danger key: tram red
 	t.add_type("DangerButton")
 	t.set_type_variation("DangerButton", "Button")
-	var red := Palette.BAD.darkened(0.1)
-	t.set_stylebox("normal", "DangerButton", key3d(red, red.darkened(0.45)))
-	t.set_stylebox("hover", "DangerButton", key3d(red.lightened(0.08), red.darkened(0.45)))
-	t.set_stylebox("pressed", "DangerButton", key3d(red.darkened(0.08), red.darkened(0.45), true))
-	t.set_stylebox("hover_pressed", "DangerButton", key3d(red.darkened(0.08), red.darkened(0.45), true))
-	t.set_stylebox("disabled", "DangerButton", key3d(red.darkened(0.5), red.darkened(0.65)))
+	var dred := Color("7d1626")
+	t.set_stylebox("normal", "DangerButton", enamel(dred, 14, false, 6, 22, 12, 0.6))
+	t.set_stylebox("hover", "DangerButton", enamel(dred.lightened(0.06), 14, false, 6, 22, 12, 0.6))
+	t.set_stylebox("pressed", "DangerButton", enamel(dred.darkened(0.1), 14, false, 2, 22, 14, 0.6))
+	t.set_stylebox("hover_pressed", "DangerButton", enamel(dred.darkened(0.1), 14, false, 2, 22, 14, 0.6))
+	t.set_stylebox("disabled", "DangerButton", enamel(dred.darkened(0.5), 14, false, 6, 22, 12, 0.2))
 
 	# Flat / ghost button
 	t.add_type("FlatButton")
@@ -146,11 +222,11 @@ static func build() -> Theme:
 	t.set_stylebox("hover_pressed", "FlatButton", box(Color(1, 1, 1, 0.12), 18, 0, Color.TRANSPARENT, 12, 10))
 
 	# Panels
-	t.set_stylebox("panel", "PanelContainer", box(Palette.PANEL, 28, 1, Palette.STROKE, 24, 20, 10))
+	t.set_stylebox("panel", "PanelContainer", enamel(Palette.PANEL, 22, true, 0, 26, 22))
 	t.set_stylebox("panel", "Panel", box(Palette.PANEL, 28, 1, Palette.STROKE, 0, 0, 10))
 	t.add_type("CardPanel")
 	t.set_type_variation("CardPanel", "PanelContainer")
-	t.set_stylebox("panel", "CardPanel", box(Palette.PANEL_2, 22, 0, Color.TRANSPARENT, 20, 16))
+	t.set_stylebox("panel", "CardPanel", enamel(Palette.PANEL_2, 14, false, 0, 20, 16, 0.35))
 	t.add_type("ChipPanel")
 	t.set_type_variation("ChipPanel", "PanelContainer")
 	t.set_stylebox("panel", "ChipPanel", box(Color(0.1, 0.13, 0.19, 0.92), 22, 1, Palette.STROKE, 14, 8, 6))

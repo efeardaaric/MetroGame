@@ -77,6 +77,7 @@ func _init(id: String) -> void:
 	net.changed.connect(func(): dirty = true)
 	_ev_rng.randomize()
 	net.tech = researched
+	_adopt_tech(true)
 	_update_mods()
 
 
@@ -504,6 +505,25 @@ func start_research(id: String) -> bool:
 	return true
 
 
+## Technology arrives with the calendar: once an innovation is in use in the country
+## (its year in TechData) the network adopts it, with a short news item.
+func _adopt_tech(silent: bool = false) -> void:
+	for id in TechData.ORDER:
+		if researched.has(id):
+			continue
+		var t := TechData.get_tech(id)
+		if year < int(t.get("year", 0)):
+			continue
+		if t.has("requires") and not researched.has(t["requires"]):
+			continue
+		researched.append(id)
+		dirty = true
+		if not silent:
+			feed.on_tech(self, id)
+			tech_completed.emit(id)
+	_update_mods()
+
+
 func _tick_research() -> void:
 	if research.is_empty():
 		return
@@ -574,6 +594,7 @@ func _end_year() -> void:
 	year_expense = 0.0
 	year_capex = 0.0
 	_develop_stations()
+	_adopt_tech()
 	city.grow(years_elapsed())
 	dirty = true
 	check_goals()

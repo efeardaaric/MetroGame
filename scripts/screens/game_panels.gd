@@ -447,7 +447,6 @@ func station_sheet(sid: int) -> Sheet:
 		hb.pressed.connect(func():
 			if st.upgrade_hub(sid):
 				Audio.play("build")
-				gs.confetti.burst(50)
 				gs.toast.show_msg(I18n.t("hub_done"), "good")
 				sh.close()
 		)

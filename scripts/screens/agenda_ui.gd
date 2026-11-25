@@ -145,7 +145,6 @@ func on_started(e: Dictionary, served: bool) -> void:
 	if e.get("need_serve", false):
 		if served:
 			g.toast.show_msg(I18n.t("re_ok_toast") % [name, Geo.fmt_money(roundf(float(g.state.city.data["annual_grant"]) * float(e.get("reward", 0.2))))], "star", 5.0)
-			g.confetti.burst(90)
 			Audio.play("goal")
 		else:
 			g.toast.show_msg(I18n.t("re_fail_toast") % name, "error", 5.0)

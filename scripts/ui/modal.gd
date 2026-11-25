@@ -33,13 +33,10 @@ func _build(title: String, width: float) -> void:
 	center.mouse_filter = Control.MOUSE_FILTER_IGNORE
 	add_child(center)
 	panel = PanelContainer.new()
-	panel.add_theme_stylebox_override("panel", ThemeBuilder.box(Palette.PANEL, 34, 1, Palette.STROKE, 32, 28, 24))
+	panel.add_theme_stylebox_override("panel", ThemeBuilder.enamel(Palette.PANEL, 24, true, 0, 34, 30))
 	panel.custom_minimum_size.x = width
 	center.add_child(panel)
 	body = UI.vbox(18)
-	var pat := Deco.CiniPattern.new()
-	pat.band = 200.0
-	panel.add_child(pat)
 	panel.add_child(body)
 	var stripe := Deco.LineStripe.new()
 	stripe.thickness = 6.0

@@ -57,7 +57,7 @@ hem de daha hızlı geliştirilebilir. Tüm UI kodla üretildiği için farklı 
   dikey + yatay + tablet düzenleri (yatayda paneller sağa yaslanır).
 - **Otomatik kayıt** (30 sn'de bir, uygulama arka plana alınınca ve çıkışta).
 - Ağır yolcu hesabı **arka plan thread'inde** çalışır → ağ büyüse de 60 FPS.
-- Özgün müzik ve ses efektleri (`tools/gen_audio.py` ile üretildi), özgün ikon/splash.
+- CC0 lisanslı gerçek müzik ve ses kayıtları (kaynaklar: `assets/audio/CREDITS.md`), özgün ikon/splash.
 
 ### Derinlik paketi
 - **İnşaat süresi ve maliyet aşımı**: hatlar uzunluk/derinliğe göre 1–30 ay inşa edilir (haritada
@@ -182,7 +182,7 @@ scripts/
   ui/                    Tema, ikonlar, sheet/modal/toast, grafikler, boy kesit
   screens/               main_menu, game_screen, game_panels
 assets/                  Yazı tipi (Nunito, OFL), sesler, ikonlar, önceden pişirilmiş harita rasterleri
-tools/                   gen_audio.py, gen_icons.py, process_ambience.py, bake_maps.(gd|tscn), check_i18n.py
+tools/                   gen_icons.py, process_ambience.py, bake_maps.(gd|tscn), check_i18n.py
 tests/                   test_core (simülasyon/denge), shots (görsel duman testi)
 .github/workflows/       CI: testler + Android APK + iOS Xcode projesi
 ```
